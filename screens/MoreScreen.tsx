@@ -173,6 +173,26 @@ export default function MoreScreen() {
           </View>
           <Feather name="chevron-right" size={20} color={theme.textSecondary} />
         </Pressable>
+
+        <Pressable
+          onPress={() => navigation.navigate("FinancialLearning")}
+          style={({ pressed }) => [
+            styles.menuItem,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
+        >
+          <View style={styles.menuItemLeft}>
+            <Feather name="book" size={24} color={theme.accent} />
+            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+              {t("more.financial")}
+            </ThemedText>
+          </View>
+          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+        </Pressable>
       </View>
 
       <View style={styles.section}>

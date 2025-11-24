@@ -32,14 +32,26 @@ export default function RegisterScreen() {
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
+  function validatePassword(pwd: string): string | null {
+    if (!pwd) return "Password is required";
+    if (pwd.length < 8) return "Password must be at least 8 characters";
+    if (!/[A-Z]/.test(pwd)) return "Password must contain an uppercase letter";
+    if (!/[a-z]/.test(pwd)) return "Password must contain a lowercase letter";
+    if (!/\d/.test(pwd)) return "Password must contain a number";
+    if (!/[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(pwd))
+      return "Password must contain a special character";
+    return null;
+  }
+
   async function handleRegister() {
     const newErrors: any = {};
 
     if (!name) newErrors.name = "Name is required";
     if (!email) newErrors.email = "Email is required";
-    if (!password) newErrors.password = "Password is required";
-    if (password && password.length < 6)
-      newErrors.password = "Password must be at least 6 characters";
+    
+    const passwordError = validatePassword(password);
+    if (passwordError) newErrors.password = passwordError;
+    
     if (password !== confirmPassword)
       newErrors.confirmPassword = "Passwords do not match";
 
@@ -144,8 +156,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
   },
   logo: {
-    width: 320,
-    height: 128,
+    width: 360,
+    height: 144,
     marginBottom: Spacing["2xl"],
   },
   title: {

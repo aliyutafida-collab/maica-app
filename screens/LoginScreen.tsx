@@ -168,8 +168,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing["2xl"],
   },
   logo: {
-    width: 320,
-    height: 128,
+    width: 360,
+    height: 144,
     marginBottom: Spacing["2xl"],
   },
   title: {

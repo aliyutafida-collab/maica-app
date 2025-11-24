@@ -1,0 +1,73 @@
+Hi Agent — please continue the MaiCa mobile app upgrade with the following required tasks. Everything below must be implemented and all bugs fixed:
+
+1) **Fix Products Page**
+- The Products screen currently fails to load. Debug the component and fix all runtime errors.
+- Ensure product list loads correctly from storage/API.
+- Ensure Add Product opens a form that saves product name, SKU, quantity, cost price, selling price, category, and tax rate.
+
+2) **Low Stock Notification**
+- Add a “Low Stock” system:
+  - Add a user-configurable low-stock threshold (default 5 units).
+  - If any product.stock <= threshold, show:
+    • red badge on Products tab  
+    • a card on Dashboard saying “Low stock items”  
+    • a notification icon in header  
+  - Create a dedicated “Low Stock Items” screen listing those products.
+
+3) **Authentication Fixes**
+- The app is displaying `auth.name`, `more.title`, `dashboard.todaySummary` instead of translations.  
+Fix the i18n key mapping so that UI shows the actual translated text, not the translation keys.
+- Ensure user profile displays actual user full name pulled from auth context.
+- Fix redirect after signup/login so no more “Something went wrong” screen appears.
+
+4) **Strong Password Requirements**
+Implement strong password validation on signup:
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 number
+- At least 1 special character
+Add inline error messages to guide users before submission.
+
+5) **Language System (i18n)**
+- Fix the language selector so switching languages actually updates the UI.
+- Re-add ALL languages originally included:
+  • English  
+  • French  
+  • Hausa  
+  • Yoruba  
+  • Igbo  
+(restore any removed languages)
+- Ensure all pages—including Dashboard, Products, Reports, More menu, Subscription, and Financial Learning—are fully translated.
+- Remove hard-coded English strings and replace with translation keys.
+
+6) **Basic Financial Management Learning Page**
+- Rebuild the “Financial Learning / Business Education” section.
+- Include:
+  • What is Cost Price  
+  • What is Selling Price  
+  • What is Profit  
+  • How Inventory Works  
+  • Pricing Strategy  
+  • Simple exercises  
+- Each topic must support full multi-language translation.
+- Add this as a visible menu item under “More”.
+
+7) **UI Cleanup**
+- Adjust spacing, margins, and alignment across Dashboard, Products, Reports, and More screen.
+- Increase MaiCa logo size on login screen (120–140px).
+- Ensure theme colors match MaiCa branding (Navy + teal).
+- Ensure icons do not overlap or break layout.
+
+8) **General Stability Fixes**
+- Remove translation-key placeholders showing on UI.
+- Remove any console errors breaking Expo Preview.
+- Ensure app runs in Expo Go without crashing.
+- Test full user flow: signup → add first product → dashboard → reports → subscription → language change → logout.
+
+When done, list:
+- All changed files
+- Any required environment variables
+- Any remaining issues needing my approval
+
+Apply these changes now. 
