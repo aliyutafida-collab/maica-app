@@ -1,0 +1,102 @@
+-- ENABLE Row Level Security where needed
+ALTER TABLE IF EXISTS profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS product_photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS password_resets ENABLE ROW LEVEL SECURITY;
+
+-- 1) profiles
+-- Allow authenticated user to insert their own profile (id must match auth.uid)
+CREATE POLICY IF NOT EXISTS profiles_insert_own ON profiles
+  FOR INSERT USING (auth.role() = 'authenticated' OR auth.role() = 'service_role')
+  WITH CHECK ((auth.role() = 'service_role') OR (id = auth.uid()));
+
+-- Allow users to select/update/delete their own profile
+CREATE POLICY IF NOT EXISTS profiles_select_own ON profiles
+  FOR SELECT USING ((auth.role() = 'service_role') OR (id = auth.uid()));
+
+CREATE POLICY IF NOT EXISTS profiles_update_own ON profiles
+  FOR UPDATE USING ((auth.role() = 'service_role') OR (id = auth.uid()))
+  WITH CHECK ((auth.role() = 'service_role') OR (id = auth.uid()));
+
+CREATE POLICY IF NOT EXISTS profiles_delete_own ON profiles
+  FOR DELETE USING ((auth.role() = 'service_role') OR (id = auth.uid()));
+
+-- 2) products
+-- Allow authenticated users to INSERT products with owner_id = auth.uid()
+CREATE POLICY IF NOT EXISTS products_insert_owner ON products
+  FOR INSERT USING (auth.role() = 'service_role' OR auth.role() = 'authenticated')
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+-- Allow users to SELECT their own products
+CREATE POLICY IF NOT EXISTS products_select_owner ON products
+  FOR SELECT USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+-- Allow users to UPDATE / DELETE their own products
+CREATE POLICY IF NOT EXISTS products_update_owner ON products
+  FOR UPDATE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()))
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+CREATE POLICY IF NOT EXISTS products_delete_owner ON products
+  FOR DELETE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+-- 3) transactions
+-- Users can INSERT transactions for themselves (owner_id = auth.uid())
+CREATE POLICY IF NOT EXISTS transactions_insert_owner ON transactions
+  FOR INSERT USING (auth.role() = 'service_role' OR auth.role() = 'authenticated')
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+-- Users can SELECT only their transactions
+CREATE POLICY IF NOT EXISTS transactions_select_owner ON transactions
+  FOR SELECT USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+-- Users can UPDATE or DELETE their transactions (if you want to allow it)
+CREATE POLICY IF NOT EXISTS transactions_update_owner ON transactions
+  FOR UPDATE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()))
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+CREATE POLICY IF NOT EXISTS transactions_delete_owner ON transactions
+  FOR DELETE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
+
+-- 4) product_photos
+-- Users can SELECT only photos whose product is owned by them
+CREATE POLICY IF NOT EXISTS product_photos_select_owner ON product_photos
+  FOR SELECT USING (
+    auth.role() = 'service_role' OR
+    EXISTS (
+      SELECT 1 FROM products p WHERE p.id = product_photos.product_id AND p.owner_id = auth.uid()
+    )
+  );
+
+-- Allow inserting photo metadata only if product is owned by user
+CREATE POLICY IF NOT EXISTS product_photos_insert_owner ON product_photos
+  FOR INSERT USING (
+    auth.role() = 'service_role' OR
+    EXISTS (SELECT 1 FROM products p WHERE p.id = new.product_id AND p.owner_id = auth.uid())
+  ) WITH CHECK (
+    auth.role() = 'service_role' OR
+    EXISTS (SELECT 1 FROM products p WHERE p.id = new.product_id AND p.owner_id = auth.uid())
+  );
+
+-- Optional: allow delete by owner (if you want users to remove photos)
+CREATE POLICY IF NOT EXISTS product_photos_delete_owner ON product_photos
+  FOR DELETE USING (
+    auth.role() = 'service_role' OR
+    EXISTS (SELECT 1 FROM products p WHERE p.id = product_photos.product_id AND p.owner_id = auth.uid())
+  );
+
+-- 5) password_resets
+-- Prevent client-side reads/inserts from anon users: only allow service role (server)
+REVOKE ALL ON password_resets FROM public;
+
+-- Make sure only service_role (server) can SELECT/INSERT/DELETE password_resets via API
+-- In Supabase, the service role key bypasses RLS; however we still avoid granting client roles
+-- If you need fine-grained policies for an admin table, create them as needed.
+
+-- 6) Grant usage for authenticated/anon roles on relevant tables (if needed)
+GRANT SELECT ON TABLE profiles TO authenticated;
+GRANT SELECT ON TABLE products TO authenticated;
+GRANT SELECT ON TABLE transactions TO authenticated;
+GRANT SELECT ON TABLE product_photos TO authenticated;
+
+-- Note: supabase admin (service role) bypasses RLS. To test RLS in the SQL editor, emulate anon/auth contexts using the policy tester UI.

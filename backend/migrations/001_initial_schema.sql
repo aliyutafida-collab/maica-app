@@ -160,63 +160,98 @@ GRANT EXECUTE ON FUNCTION monthly_sales_last_n_months TO authenticated;
 -- ============================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sales ENABLE ROW LEVEL SECURITY;
-ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS product_photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS password_resets ENABLE ROW LEVEL SECURITY;
 
--- Users can view their own profile
-CREATE POLICY "Users can view own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
+-- 1) PROFILES TABLE
+-- Allow authenticated user to insert their own profile (id must match auth.uid)
+CREATE POLICY IF NOT EXISTS profiles_insert_own ON profiles
+  FOR INSERT USING (auth.role() = 'authenticated' OR auth.role() = 'service_role')
+  WITH CHECK ((auth.role() = 'service_role') OR (id = auth.uid()));
 
--- Users can update their own profile
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+-- Allow users to select/update/delete their own profile
+CREATE POLICY IF NOT EXISTS profiles_select_own ON profiles
+  FOR SELECT USING ((auth.role() = 'service_role') OR (id = auth.uid()));
 
--- Users can view their own products
-CREATE POLICY "Users can view own products" ON products
-  FOR SELECT USING (auth.uid() = owner_id);
+CREATE POLICY IF NOT EXISTS profiles_update_own ON profiles
+  FOR UPDATE USING ((auth.role() = 'service_role') OR (id = auth.uid()))
+  WITH CHECK ((auth.role() = 'service_role') OR (id = auth.uid()));
 
--- Users can manage their own products
-CREATE POLICY "Users can manage own products" ON products
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY IF NOT EXISTS profiles_delete_own ON profiles
+  FOR DELETE USING ((auth.role() = 'service_role') OR (id = auth.uid()));
 
-CREATE POLICY "Users can update own products" ON products
-  FOR UPDATE USING (auth.uid() = owner_id);
+-- 2) PRODUCTS TABLE
+-- Allow authenticated users to INSERT products with owner_id = auth.uid()
+CREATE POLICY IF NOT EXISTS products_insert_owner ON products
+  FOR INSERT USING (auth.role() = 'service_role' OR auth.role() = 'authenticated')
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
-CREATE POLICY "Users can delete own products" ON products
-  FOR DELETE USING (auth.uid() = owner_id);
+-- Allow users to SELECT their own products
+CREATE POLICY IF NOT EXISTS products_select_owner ON products
+  FOR SELECT USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
--- Users can view their own sales
-CREATE POLICY "Users can view own sales" ON sales
-  FOR SELECT USING (auth.uid() = owner_id);
+-- Allow users to UPDATE / DELETE their own products
+CREATE POLICY IF NOT EXISTS products_update_owner ON products
+  FOR UPDATE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()))
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
-CREATE POLICY "Users can insert own sales" ON sales
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY IF NOT EXISTS products_delete_owner ON products
+  FOR DELETE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
-CREATE POLICY "Users can update own sales" ON sales
-  FOR UPDATE USING (auth.uid() = owner_id);
+-- 3) TRANSACTIONS TABLE
+-- Users can INSERT transactions for themselves (owner_id = auth.uid())
+CREATE POLICY IF NOT EXISTS transactions_insert_owner ON transactions
+  FOR INSERT USING (auth.role() = 'service_role' OR auth.role() = 'authenticated')
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
-CREATE POLICY "Users can delete own sales" ON sales
-  FOR DELETE USING (auth.uid() = owner_id);
+-- Users can SELECT only their transactions
+CREATE POLICY IF NOT EXISTS transactions_select_owner ON transactions
+  FOR SELECT USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
--- Users can view their own expenses
-CREATE POLICY "Users can view own expenses" ON expenses
-  FOR SELECT USING (auth.uid() = owner_id);
+-- Users can UPDATE or DELETE their transactions
+CREATE POLICY IF NOT EXISTS transactions_update_owner ON transactions
+  FOR UPDATE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()))
+  WITH CHECK ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
-CREATE POLICY "Users can insert own expenses" ON expenses
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY IF NOT EXISTS transactions_delete_owner ON transactions
+  FOR DELETE USING ((auth.role() = 'service_role') OR (owner_id = auth.uid()));
 
-CREATE POLICY "Users can update own expenses" ON expenses
-  FOR UPDATE USING (auth.uid() = owner_id);
+-- 4) PRODUCT_PHOTOS TABLE
+-- Users can SELECT only photos whose product is owned by them
+CREATE POLICY IF NOT EXISTS product_photos_select_owner ON product_photos
+  FOR SELECT USING (
+    auth.role() = 'service_role' OR
+    EXISTS (
+      SELECT 1 FROM products p WHERE p.id = product_photos.product_id AND p.owner_id = auth.uid()
+    )
+  );
 
-CREATE POLICY "Users can delete own expenses" ON expenses
-  FOR DELETE USING (auth.uid() = owner_id);
+-- Allow inserting photo metadata only if product is owned by user
+CREATE POLICY IF NOT EXISTS product_photos_insert_owner ON product_photos
+  FOR INSERT USING (
+    auth.role() = 'service_role' OR
+    EXISTS (SELECT 1 FROM products p WHERE p.id = product_photos.product_id AND p.owner_id = auth.uid())
+  ) WITH CHECK (
+    auth.role() = 'service_role' OR
+    EXISTS (SELECT 1 FROM products p WHERE p.id = product_photos.product_id AND p.owner_id = auth.uid())
+  );
 
--- Users can view their own transactions
-CREATE POLICY "Users can view own transactions" ON transactions
-  FOR SELECT USING (auth.uid() = owner_id);
+-- Allow delete by owner
+CREATE POLICY IF NOT EXISTS product_photos_delete_owner ON product_photos
+  FOR DELETE USING (
+    auth.role() = 'service_role' OR
+    EXISTS (SELECT 1 FROM products p WHERE p.id = product_photos.product_id AND p.owner_id = auth.uid())
+  );
 
-CREATE POLICY "Users can insert own transactions" ON transactions
-  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+-- 5) PASSWORD_RESETS TABLE
+-- Prevent client-side reads/inserts from anon users: only allow service role (server)
+REVOKE ALL ON password_resets FROM public;
+
+-- 6) GRANT PERMISSIONS
+GRANT SELECT ON TABLE profiles TO authenticated;
+GRANT SELECT ON TABLE products TO authenticated;
+GRANT SELECT ON TABLE transactions TO authenticated;
+GRANT SELECT ON TABLE product_photos TO authenticated;
