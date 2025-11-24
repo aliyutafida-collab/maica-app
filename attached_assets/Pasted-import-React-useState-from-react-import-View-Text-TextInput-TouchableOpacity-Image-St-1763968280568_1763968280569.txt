@@ -1,0 +1,100 @@
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet } from "react-native";
+import api from "../utils/api";
+import { resetTo } from "../utils/navigationHelpers";
+
+export default function Login({ navigation }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function submit() {
+    try {
+      const res = await api.post("/auth/login", { email, password });
+      resetTo(navigation, "Dashboard", { user: res.user });
+    } catch (e) {
+      alert("Invalid login");
+    }
+  }
+
+  return (
+    <View style={styles.container}>
+      <Image
+        source={require("../assets/login-logo.jpeg")}
+        style={styles.logo}
+      />
+
+      <Text style={styles.title}>Welcome to Maica</Text>
+      <Text style={styles.subtitle}>Your smart financial companion</Text>
+
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+
+      <TextInput
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+
+      <TouchableOpacity onPress={submit} style={styles.button}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
+        <Text style={styles.forgot}>Forgot Password?</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 28,
+    backgroundColor: "#F9FAFC",
+    justifyContent: "center"
+  },
+  logo: {
+    width: 160,
+    height: 160,
+    alignSelf: "center",
+    marginBottom: 20,
+    resizeMode: "contain"
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 4
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#555",
+    marginBottom: 24
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#DDD",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 14,
+    backgroundColor: "#FFF"
+  },
+  button: {
+    backgroundColor: "#0A84FF",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10
+  },
+  buttonText: { color: "#FFF", fontWeight: "600", fontSize: 17 },
+  forgot: { color: "#0A84FF", textAlign: "center", marginTop: 18 }
+});

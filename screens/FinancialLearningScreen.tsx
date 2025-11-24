@@ -23,43 +23,44 @@ interface Lesson {
 export default function FinancialLearningScreen() {
   const { theme } = useTheme();
   const { paddingTop, paddingBottom } = useScreenInsets();
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
   const lessons: Lesson[] = [
     {
       id: '1',
-      title: 'What is Cost Price',
-      description: 'Understanding the amount you pay for products',
+      title: t('learning.costPrice.title') || 'What is Cost Price',
+      description: t('learning.costPrice.description') || 'Understanding the amount you pay for products',
       icon: 'dollar-sign',
-      content: 'Cost Price is the amount you pay to acquire a product for resale. It includes the purchase price from suppliers, plus any import duties, shipping costs, or other charges directly related to obtaining the product. Knowing your cost price is essential for calculating profit margins.',
+      content: t('learning.costPrice.content') || 'Cost Price is the amount you pay to acquire a product for resale. It includes the purchase price from suppliers, plus any import duties, shipping costs, or other charges directly related to obtaining the product. Knowing your cost price is essential for calculating profit margins.',
     },
     {
       id: '2',
-      title: 'What is Selling Price',
-      description: 'The price at which you sell to customers',
+      title: t('learning.sellingPrice.title') || 'What is Selling Price',
+      description: t('learning.sellingPrice.description') || 'The price at which you sell to customers',
       icon: 'shopping-cart',
-      content: 'Selling Price (or Retail Price) is the amount customers pay when they buy your products. It should be higher than your cost price to generate profit. Your selling price is typically determined by market demand, competition, and the profit margin you want to achieve.',
+      content: t('learning.sellingPrice.content') || 'Selling Price (or Retail Price) is the amount customers pay when they buy your products. It should be higher than your cost price to generate profit. Your selling price is typically determined by market demand, competition, and the profit margin you want to achieve.',
     },
     {
       id: '3',
-      title: 'Understanding Profit',
-      description: 'How to calculate and maximize profits',
+      title: t('learning.profit.title') || 'Understanding Profit',
+      description: t('learning.profit.description') || 'How to calculate and maximize profits',
       icon: 'trending-up',
-      content: 'Profit = Selling Price - Cost Price. Profit Margin = (Profit / Selling Price) × 100%. Understanding your profit helps you make pricing decisions, identify which products are most profitable, and plan your business growth strategy effectively.',
+      content: t('learning.profit.content') || 'Profit = Selling Price - Cost Price. Profit Margin = (Profit / Selling Price) × 100%. Understanding your profit helps you make pricing decisions, identify which products are most profitable, and plan your business growth strategy effectively.',
     },
     {
       id: '4',
-      title: 'How Inventory Works',
-      description: 'Managing your stock efficiently',
+      title: t('learning.inventory.title') || 'How Inventory Works',
+      description: t('learning.inventory.description') || 'Managing your stock efficiently',
       icon: 'package',
-      content: 'Inventory management is tracking what products you have in stock. Keep inventory levels balanced - not too high (which ties up cash) and not too low (which loses sales). Regularly monitor stock levels, set reorder points, and track product movement to optimize your inventory.',
+      content: t('learning.inventory.content') || 'Inventory management is tracking what products you have in stock. Keep inventory levels balanced - not too high (which ties up cash) and not too low (which loses sales). Regularly monitor stock levels, set reorder points, and track product movement to optimize your inventory.',
     },
     {
       id: '5',
-      title: 'Pricing Strategy',
-      description: 'Setting competitive and profitable prices',
+      title: t('learning.pricing.title') || 'Pricing Strategy',
+      description: t('learning.pricing.description') || 'Setting competitive and profitable prices',
       icon: 'bar-chart-2',
-      content: 'Effective pricing strategies include: Cost-Plus Pricing (cost + fixed margin), Competitive Pricing (matching market rates), Value-Based Pricing (based on perceived customer value), and Dynamic Pricing (adjusting based on demand). Choose a strategy that aligns with your business goals.',
+      content: t('learning.pricing.content') || 'Effective pricing strategies include: Cost-Plus Pricing (cost + fixed margin), Competitive Pricing (matching market rates), Value-Based Pricing (based on perceived customer value), and Dynamic Pricing (adjusting based on demand). Choose a strategy that aligns with your business goals.',
     },
   ];
 
@@ -78,7 +79,7 @@ export default function FinancialLearningScreen() {
           <Feather name="x" size={24} color={theme.text} />
         </Pressable>
         <ThemedText style={[styles.headerTitle, { color: theme.text }]}>
-          Financial Learning
+          {t('learning.title') || 'Financial Learning'}
         </ThemedText>
         <View style={{ width: 24 }} />
       </View>
@@ -134,7 +135,8 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
   },
   headerTitle: {
-    ...Typography.h3,
+    fontSize: Typography.h3.fontSize,
+    fontWeight: "600" as const,
   },
   content: {
     padding: Spacing.lg,
@@ -162,14 +164,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   lessonTitle: {
-    ...Typography.h4,
+    fontSize: Typography.h3.fontSize,
+    fontWeight: "600" as const,
     marginBottom: Spacing.xs,
   },
   lessonDescription: {
-    ...Typography.bodySm,
+    fontSize: Typography.bodySm.fontSize,
+    fontWeight: "400" as const,
   },
   lessonContent: {
-    ...Typography.body,
+    fontSize: Typography.body.fontSize,
+    fontWeight: "400" as const,
     lineHeight: 24,
   },
 });

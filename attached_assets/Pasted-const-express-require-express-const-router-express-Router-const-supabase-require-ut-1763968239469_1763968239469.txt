@@ -1,0 +1,109 @@
+const express = require("express");
+const router = express.Router();
+const supabase = require("../utils/supabaseClient");
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
+const { v4: uuidv4 } = require("uuid");
+const { sendResetEmail } = require("../utils/email");
+
+router.post("/register", async (req, res) => {
+  const { email, password, firstName, lastName, products = [] } = req.body;
+
+  // create user in Supabase Auth
+  const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true
+  });
+
+  if (userError) return res.status(400).json({ error: userError.message });
+
+  const userId = userData.user.id;
+
+  // store profile details
+  await supabase.from("profiles").insert({
+    id: userId,
+    first_name: firstName,
+    last_name: lastName
+  });
+
+  // store multiple products for registration
+  for (const p of products) {
+    if (!p.name) continue;
+    await supabase.from("products").insert({
+      id: uuidv4(),
+      owner_id: userId,
+      name: p.name,
+      price: Number(p.price) || 0,
+      qty: Number(p.qty) || 0
+    });
+  }
+
+  res.json({ ok: true });
+});
+
+router.post("/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) return res.status(401).json({ error: error.message });
+
+  res.json({
+    ok: true,
+    accessToken: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    user: data.user
+  });
+});
+
+router.post("/forgot", async (req, res) => {
+  const { email } = req.body;
+  const resetToken = crypto.randomBytes(32).toString("hex");
+  const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+  await supabase.from("password_resets").insert({
+    id: uuidv4(),
+    email,
+    token_hash: hashedToken,
+    expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString()
+  });
+
+  const resetLink = `${process.env.MAICA_WEB_URL}/reset-password?token=${resetToken}&email=${email}`;
+  await sendResetEmail(email, resetLink);
+
+  res.json({ ok: true });
+});
+
+router.post("/reset", async (req, res) => {
+  const { token, email, password } = req.body;
+
+  const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
+
+  const { data, error } = await supabase
+    .from("password_resets")
+    .select("*")
+    .eq("email", email)
+    .eq("token_hash", tokenHash)
+    .limit(1);
+
+  if (!data?.length) return res.status(400).json({ error: "Invalid token" });
+
+  if (new Date(data[0].expires_at) < new Date())
+    return res.status(400).json({ error: "Token expired" });
+
+  const { error: passErr } = await supabase.auth.admin.updateUserByEmail(email, {
+    password
+  });
+
+  if (passErr) return res.status(400).json({ error: passErr.message });
+
+  await supabase.from("password_resets").delete().eq("id", data[0].id);
+
+  res.json({ ok: true });
+});
+
+module.exports = router;

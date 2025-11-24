@@ -11,6 +11,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { getSales, getExpenses } from "@/services/storage";
+import { formatCurrency } from "@/lib/formatters";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -18,12 +19,36 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 export default function DashboardScreen() {
   const [todaySales, setTodaySales] = useState(0);
   const [todayExpenses, setTodayExpenses] = useState(0);
+  const [weeklySales, setWeeklySales] = useState(0);
+  const [weeklyExpenses, setWeeklyExpenses] = useState(0);
+  const [monthlySales, setMonthlySales] = useState(0);
+  const [monthlyExpenses, setMonthlyExpenses] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [period, setPeriod] = useState<"day" | "week" | "month">("day");
 
   const { user } = useAuth();
   const { t } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+
+  function getDateRange(periodType: "day" | "week" | "month") {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    if (periodType === "day") {
+      return { start: today, end: new Date(today.getTime() + 24 * 60 * 60 * 1000) };
+    } else if (periodType === "week") {
+      const dayOfWeek = today.getDay();
+      const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+      const start = new Date(today.setDate(diff));
+      const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+      return { start, end };
+    } else {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+      return { start, end };
+    }
+  }
 
   async function loadData() {
     if (!user) return;
@@ -31,16 +56,35 @@ export default function DashboardScreen() {
     const sales = await getSales(user.id);
     const expenses = await getExpenses(user.id);
 
-    const today = new Date().toDateString();
-    const salesToday = sales
-      .filter((s) => new Date(s.createdAt).toDateString() === today)
-      .reduce((sum, s) => sum + s.total, 0);
-    const expensesToday = expenses
-      .filter((e) => new Date(e.createdAt).toDateString() === today)
-      .reduce((sum, e) => sum + e.amount, 0);
+    // Calculate for all periods
+    const periods = ["day", "week", "month"] as const;
 
-    setTodaySales(salesToday);
-    setTodayExpenses(expensesToday);
+    for (const p of periods) {
+      const { start, end } = getDateRange(p);
+      const salesTotals = sales
+        .filter((s) => {
+          const d = new Date(s.createdAt);
+          return d >= start && d < end;
+        })
+        .reduce((sum, s) => sum + s.total, 0);
+      const expensesTotals = expenses
+        .filter((e) => {
+          const d = new Date(e.createdAt);
+          return d >= start && d < end;
+        })
+        .reduce((sum, e) => sum + e.amount, 0);
+
+      if (p === "day") {
+        setTodaySales(salesTotals);
+        setTodayExpenses(expensesTotals);
+      } else if (p === "week") {
+        setWeeklySales(salesTotals);
+        setWeeklyExpenses(expensesTotals);
+      } else {
+        setMonthlySales(salesTotals);
+        setMonthlyExpenses(expensesTotals);
+      }
+    }
   }
 
   useFocusEffect(
@@ -72,6 +116,32 @@ export default function DashboardScreen() {
         </ThemedText>
       </View>
 
+      <View style={styles.periodSelector}>
+        {(["day", "week", "month"] as const).map((p) => (
+          <Pressable
+            key={p}
+            onPress={() => setPeriod(p)}
+            style={[
+              styles.periodButton,
+              {
+                backgroundColor:
+                  period === p ? theme.accent : theme.surface,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <ThemedText
+              style={[
+                styles.periodButtonText,
+                { color: period === p ? "#FFFFFF" : theme.text },
+              ]}
+            >
+              {p === "day" ? "Today" : p === "week" ? "Week" : "Month"}
+            </ThemedText>
+          </Pressable>
+        ))}
+      </View>
+
       <ThemedView
         style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
       >
@@ -81,7 +151,13 @@ export default function DashboardScreen() {
               {t("dashboard.sales")}
             </ThemedText>
             <ThemedText style={[styles.value, { color: theme.success }]}>
-              ₦{todaySales.toFixed(2)}
+              {formatCurrency(
+                period === "day"
+                  ? todaySales
+                  : period === "week"
+                    ? weeklySales
+                    : monthlySales
+              )}
             </ThemedText>
           </View>
           <View style={styles.summaryItem}>
@@ -89,7 +165,13 @@ export default function DashboardScreen() {
               {t("dashboard.expenses")}
             </ThemedText>
             <ThemedText style={[styles.value, { color: theme.error }]}>
-              ₦{todayExpenses.toFixed(2)}
+              {formatCurrency(
+                period === "day"
+                  ? todayExpenses
+                  : period === "week"
+                    ? weeklyExpenses
+                    : monthlyExpenses
+              )}
             </ThemedText>
           </View>
           <View style={styles.summaryItem}>
@@ -99,10 +181,25 @@ export default function DashboardScreen() {
             <ThemedText
               style={[
                 styles.value,
-                { color: netIncome >= 0 ? theme.success : theme.error },
+                {
+                  color:
+                    (period === "day"
+                      ? todaySales - todayExpenses
+                      : period === "week"
+                        ? weeklySales - weeklyExpenses
+                        : monthlySales - monthlyExpenses) >= 0
+                      ? theme.success
+                      : theme.error,
+                },
               ]}
             >
-              ₦{netIncome.toFixed(2)}
+              {formatCurrency(
+                period === "day"
+                  ? todaySales - todayExpenses
+                  : period === "week"
+                    ? weeklySales - weeklyExpenses
+                    : monthlySales - monthlyExpenses
+              )}
             </ThemedText>
           </View>
         </View>
@@ -154,40 +251,66 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   header: {
     marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
   },
   greeting: {
-    ...Typography.h1,
+    fontSize: Typography.h1.fontSize,
+    fontWeight: "700" as const,
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    ...Typography.body,
+    fontSize: Typography.body.fontSize,
+    fontWeight: "400" as const,
+  },
+  periodSelector: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    marginBottom: Spacing.lg,
+  },
+  periodButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+  },
+  periodButtonText: {
+    fontSize: Typography.bodySm.fontSize,
+    fontWeight: "600" as const,
   },
   card: {
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
     padding: Spacing.lg,
     marginBottom: Spacing.xl,
+    marginHorizontal: Spacing.lg,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    gap: Spacing.md,
   },
   summaryItem: {
     flex: 1,
     alignItems: "center",
   },
   label: {
-    ...Typography.small,
+    fontSize: Typography.bodySm.fontSize,
+    fontWeight: "500" as const,
     marginBottom: Spacing.xs,
   },
   value: {
-    ...Typography.h2,
+    fontSize: Typography.body.fontSize,
+    fontWeight: "600" as const,
   },
   actionsContainer: {
     marginTop: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
   sectionTitle: {
-    ...Typography.h3,
+    fontSize: Typography.h3.fontSize,
+    fontWeight: "600" as const,
     marginBottom: Spacing.lg,
   },
   actionsGrid: {
@@ -206,8 +329,9 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   actionLabel: {
-    ...Typography.small,
+    fontSize: Typography.bodySm.fontSize,
+    fontWeight: "500" as const,
     marginTop: Spacing.sm,
-    textAlign: "center",
+    textAlign: "center" as const,
   },
 });

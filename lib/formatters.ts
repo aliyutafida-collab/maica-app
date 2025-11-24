@@ -1,0 +1,24 @@
+/**
+ * Currency and number formatting utilities with thousands separators
+ */
+
+export function formatCurrency(
+  amount: number | null | undefined,
+  currencySymbol: string = "₦"
+): string {
+  if (amount == null || isNaN(amount)) return `${currencySymbol}0.00`;
+  const num = Number(amount);
+  return `${currencySymbol}${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+}
+
+export function formatNumber(value: number | null | undefined): string {
+  if (value == null || isNaN(value)) return "0";
+  return Math.floor(Number(value))
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+export function formatDecimal(value: number | null | undefined, decimals = 2): string {
+  if (value == null || isNaN(value)) return "0." + "0".repeat(decimals);
+  return Number(value).toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}

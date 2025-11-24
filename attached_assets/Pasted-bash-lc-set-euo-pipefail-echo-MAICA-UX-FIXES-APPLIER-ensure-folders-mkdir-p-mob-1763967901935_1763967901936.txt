@@ -1,0 +1,393 @@
+bash -lc 'set -euo pipefail
+echo "=== MAICA: UX + FIXES APPLIER ===";
+
+# ensure folders
+mkdir -p mobile/src/components mobile/src/utils mobile/src/screens mobile/assets backend/migrations backend/src/routes;
+
+# copy provided screenshot into assets (if path exists)
+SRC="/mnt/data/8034E078-581A-4530-AECE-D8AEC28ABD78.jpeg"
+if [ -f "$SRC" ]; then
+  cp "$SRC" mobile/assets/login-logo.jpeg
+  echo "Copied login logo to mobile/assets/login-logo.jpeg"
+else
+  echo "Warning: login image not found at $SRC"
+fi
+
+# 1) global number formatter utility (thousands with comma + currency)
+cat > mobile/src/utils/formatters.js <<'"JS"'
+export function formatCurrency(n, currencySymbol = "₦") {
+  if (n == null || Number.isNaN(Number(n))) return currencySymbol + "0.00";
+  const num = Number(n);
+  // keep two decimals, comma thousands separator
+  return currencySymbol + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+export function formatInteger(n) {
+  if (n == null || Number.isNaN(Number(n))) return "0";
+  return Number(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+JS
+echo "Added mobile/src/utils/formatters.js";
+
+# 2) fix navigation.reset usage (safe helper)
+cat > mobile/src/utils/navigationHelpers.js <<'"JS"'
+export function resetTo(navigation, routeName, params = {}) {
+  // react-navigation reset helper
+  navigation.reset({
+    index: 0,
+    routes: [{ name: routeName, params }],
+  });
+}
+JS
+echo "Added navigation reset helper";
+
+# 3) Update logout to use reset helper & unregister push
+cat > mobile/src/auth/logout.js <<'"JS"'
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import api from '../utils/api';
+import { resetTo } from '../utils/navigationHelpers';
+
+export async function logout(navigation) {
+  try { await api.post('/auth/logout'); } catch (e) { console.warn(e?.message || e); }
+  await AsyncStorage.multiRemove(['accessToken','refreshToken','user']);
+  try { await api.post('/auth/unregister-push'); } catch(e){}
+  resetTo(navigation, 'Login');
+}
+export default logout;
+JS
+echo "Updated logout implementation";
+
+# 4) Dashboard: client-side aggregation helper (week/month/quarter/year)
+cat > mobile/src/utils/aggregator.js <<'"JS"'
+/**
+ * Input: array of transactions { amount: number, type: "sale"|"expense", date: ISOString }
+ * output: aggregated totals for requested period
+ */
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
+
+function inRange(dateISO, start, end) {
+  const d = parseISO(dateISO);
+  return d >= start && d <= end;
+}
+
+export function aggregate(transactions = [], period = 'week') {
+  const now = new Date();
+  let start, end;
+  if (period === 'week') { start = startOfWeek(now, { weekStartsOn: 1 }); end = endOfWeek(now, { weekStartsOn: 1 }); }
+  else if (period === 'month') { start = startOfMonth(now); end = endOfMonth(now); }
+  else if (period === 'quarter') { start = startOfQuarter(now); end = endOfQuarter(now); }
+  else if (period === 'year') { start = startOfYear(now); end = endOfYear(now); }
+  else { start = startOfWeek(now, { weekStartsOn: 1 }); end = endOfWeek(now, { weekStartsOn: 1 }); }
+
+  let sales = 0, expenses = 0;
+  for (const t of transactions) {
+    if (!t?.date) continue;
+    if (inRange(t.date, start, end)) {
+      if (t.type === 'sale') sales += Number(t.amount || 0);
+      if (t.type === 'expense') expenses += Number(t.amount || 0);
+    }
+  }
+  return { sales, expenses, net: sales - expenses, start: start.toISOString(), end: end.toISOString() };
+}
+JS
+echo "Added aggregation helper";
+
+# 5) Dashboard screen stub: uses formatter + aggregator + live refresh (skeleton + polling)
+cat > mobile/src/screens/Dashboard.js <<'"JS"'
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView, StyleSheet, Image } from 'react-native';
+import api from '../utils/api';
+import { formatCurrency } from '../utils/formatters';
+import { aggregate } from '../utils/aggregator';
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState([]);
+  const [period, setPeriod] = useState('week');
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await api.get('/reports/transactions?limit=1000'); // server should support date range & limit
+      setTransactions(res?.data || []);
+    } catch(e) {
+      console.warn("Dashboard load failed", e);
+    } finally { setLoading(false); }
+  }
+
+  useEffect(()=> {
+    load();
+    const id = setInterval(load, 30_000); // poll every 30s for live-ish update
+    return ()=> clearInterval(id);
+  },[]);
+
+  const agg = aggregate(transactions, period);
+
+  return (
+    <ScrollView contentContainerStyle={{padding:16}}>
+      <Image source={require('../assets/login-logo.jpeg')} style={{width:96,height:96,alignSelf:'center',marginBottom:12,resizeMode:'contain'}} />
+      <Text style={{fontSize:20,fontWeight:'700',textAlign:'center',marginBottom:8}}>Welcome</Text>
+      <View style={styles.metrics}>
+        {loading ? <ActivityIndicator/> : (
+          <>
+            <View style={styles.card}><Text>Sales</Text><Text style={{color:'#0a8'}}>{formatCurrency(agg.sales)}</Text></View>
+            <View style={styles.card}><Text>Expenses</Text><Text style={{color:'#d33'}}>{formatCurrency(agg.expenses)}</Text></View>
+            <View style={styles.card}><Text>Net</Text><Text style={{color:'#0a8'}}>{formatCurrency(agg.net)}</Text></View>
+          </>
+        )}
+      </View>
+
+      <View style={{flexDirection:'row',justifyContent:'space-around',marginVertical:12}}>
+        {['week','month','quarter','year'].map(p=>(
+          <TouchableOpacity key={p} onPress={()=> setPeriod(p)} style={[styles.btn, period===p && styles.btnActive]}>
+            <Text>{p}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <Text style={{marginTop:10,fontWeight:'600'}}>Quick Actions</Text>
+      <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:8}}>
+        <TouchableOpacity style={styles.action}><Text>Add Sale</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.action}><Text>Add Expense</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.action}><Text>Add Product</Text></TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  metrics:{ flexDirection:'row', justifyContent:'space-between', marginVertical:12 },
+  card:{ flex:1, padding:12, marginHorizontal:6, backgroundColor:'#fff', borderRadius:8, alignItems:'center', elevation:1 },
+  btn:{ padding:8, borderRadius:6, borderWidth:1, borderColor:'#ddd' },
+  btnActive:{ backgroundColor:'#e6f7f7' },
+  action:{ flex:1, padding:14, marginHorizontal:6, backgroundColor:'#fff', borderRadius:8, alignItems:'center' }
+});
+JS
+echo "Added Dashboard screen stub (uses formatter + aggregator)";
+
+# 6) Products page: client fetch with pagination & error handling stub
+cat > mobile/src/screens/Products.js <<'"JS"'
+import React, { useEffect, useState } from 'react';
+import { FlatList, View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
+import api from '../utils/api';
+import { formatInteger } from '../utils/formatters';
+
+export default function Products() {
+  const [data, setData] = useState([]);
+  const [page, setPage] = useState(0);
+  const [loading,setLoading] = useState(false);
+  const [end,setEnd] = useState(false);
+
+  const fetch = async (p=0) => {
+    if (loading || end) return;
+    setLoading(true);
+    try {
+      const res = await api.get(`/products?page=${p}&perPage=20`);
+      const items = (res?.data || res) || [];
+      if (items.length === 0) setEnd(true);
+      setData(prev => p===0 ? items : [...prev, ...items]);
+      setPage(p+1);
+    } catch(e) {
+      console.warn("Products fetch error", e);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(()=> { fetch(0); }, []);
+
+  return (
+    <View style={{flex:1,padding:12}}>
+      <FlatList data={data} keyExtractor={i=>String(i.id)} onEndReached={()=> fetch(page)} onEndReachedThreshold={0.5}
+        ListFooterComponent={ loading ? <ActivityIndicator/> : null }
+        renderItem={({item})=> (
+          <View style={{padding:12,marginBottom:8,backgroundColor:'#fff',borderRadius:8}}>
+            <Text>{item.name}</Text>
+            <Text>Qty: {formatInteger(item.qty)}</Text>
+          </View>
+        )}
+      />
+    </View>
+  );
+}
+JS
+echo "Added products page client with pagination";
+
+# 7) Allow multiple products at registration (client & server stub + migration)
+# client: registration multiple products UI simplified
+cat > mobile/src/screens/Register.js <<'"JS"'
+import React, { useState } from "react";
+import { View, TextInput, Button, Text, ScrollView } from "react-native";
+import api from "../utils/api";
+
+export default function Register({ navigation }) {
+  const [email,setEmail] = useState("");
+  const [password,setPassword] = useState("");
+  const [products, setProducts] = useState([{ name:"", price:"", qty:"" }]);
+
+  function updateProduct(i, key, val) {
+    const copy = [...products]; copy[i][key] = val; setProducts(copy);
+  }
+  function addProduct() { setProducts([...products, { name:"", price:"", qty:"" }]); }
+  async function submit() {
+    const body = { email, password, products };
+    await api.post("/auth/register", body).then(()=> navigation.reset({ index:0, routes:[{ name:"Login" }] })).catch(()=> alert("Register failed"));
+  }
+
+  return (
+    <ScrollView contentContainerStyle={{padding:16}}>
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={{borderWidth:1,padding:8,marginBottom:8}} />
+      <TextInput placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} style={{borderWidth:1,padding:8,marginBottom:8}} />
+      <Text style={{fontWeight:'600',marginTop:8}}>Products (add multiple)</Text>
+      {products.map((p,i)=>(
+        <View key={i} style={{marginTop:6,borderWidth:1,padding:8,borderRadius:8}}>
+          <TextInput placeholder="Name" value={p.name} onChangeText={v=>updateProduct(i,'name',v)} style={{borderBottomWidth:1,marginBottom:6}} />
+          <TextInput placeholder="Price" value={p.price} onChangeText={v=>updateProduct(i,'price',v)} keyboardType="numeric" style={{borderBottomWidth:1,marginBottom:6}} />
+          <TextInput placeholder="Qty" value={p.qty} onChangeText={v=>updateProduct(i,'qty',v)} keyboardType="numeric" />
+        </View>
+      ))}
+      <Button title="Add another product" onPress={addProduct} />
+      <View style={{height:12}}/>
+      <Button title="Register" onPress={submit} />
+    </ScrollView>
+  );
+}
+JS
+echo "Added registration screen allowing multiple products";
+
+# server: modify auth register to accept products and store (migration stub)
+cat > backend/src/routes/register_with_products.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcrypt');
+const db = require('../../db') || require('../../dbstub');
+
+router.post('/', async (req,res)=>{
+  const { email, password, products = [] } = req.body;
+  const id = uuidv4();
+  const password_hash = await bcrypt.hash(password, 12);
+  await db.query('INSERT INTO users (id,email,password_hash,created_at) VALUES ($1,$2,$3,NOW())', [id,email,password_hash]);
+  for (const p of products) {
+    if (!p.name) continue;
+    const pid = uuidv4();
+    await db.query('INSERT INTO products (id,name,price,qty,owner_id,created_at) VALUES ($1,$2,$3,$4,$5,NOW())', [pid,p.name,Number(p.price)||0,Number(p.qty)||0,id]);
+  }
+  res.json({ ok:true, id });
+});
+
+module.exports = router;
+JS
+echo "Added backend route to register user + multiple products (backend/src/routes/register_with_products.js)";
+
+# migration to add products table
+cat > backend/migrations/$(date +%Y%m%d%H%M%S)_add_products_table.sql <<'"SQL"'
+CREATE TABLE IF NOT EXISTS products (
+  id UUID PRIMARY KEY,
+  name TEXT,
+  price NUMERIC DEFAULT 0,
+  qty INTEGER DEFAULT 0,
+  owner_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_products_owner ON products(owner_id);
+SQL
+echo "Added migration for products table";
+
+# 8) i18n: ensure learning page reads translations and update "more.languages" label
+mkdir -p mobile/src/i18n/locales
+cat > mobile/src/i18n/index.js <<'"JS"'
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import en from './locales/en.json';
+i18n.use(initReactI18next).init({
+  compatibilityJSON:'v3',
+  resources:{ en:{ translation: en } },
+  lng: 'en',
+  fallbackLng: 'en',
+  interpolation:{ escapeValue:false }
+});
+export default i18n;
+JS
+cat > mobile/src/i18n/locales/en.json <<'"JSON"'
+{
+  "learning": {
+    "title": "Financial learning",
+    "chapter1": "Simple explanation of profit and cost",
+    "activity": "Activity: calculate profit",
+    "more_languages": "More languages"
+  }
+}
+JSON
+echo "Wrote i18n skeleton and learning translations (English)";
+
+# 9) Adjust global styles spacing helper (improves gaps)
+cat > mobile/src/components/Spacing.js <<'"JS"'
+import React from 'react';
+import { View } from 'react-native';
+export default function Spacing({ h=8, v=8 }) {
+  return <View style={{height: v, width: h}}/>;
+}
+JS
+echo "Added spacing component to standardize gaps";
+
+# 10) Add server reports endpoint to fetch transactions by date range
+cat > backend/src/routes/reports.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const db = require('../../db') || require('../../dbstub');
+
+// GET /reports/transactions?from=2025-01-01&to=2025-01-31&limit=1000
+router.get('/transactions', async (req,res)=>{
+  const from = req.query.from || null;
+  const to = req.query.to || null;
+  const limit = Math.min(Number(req.query.limit||1000), 5000);
+  let q = 'SELECT id, amount, type, date FROM transactions';
+  const params = [];
+  if (from && to) {
+    q += ' WHERE date >= $1 AND date <= $2';
+    params.push(from, to);
+  }
+  q += ' ORDER BY date DESC LIMIT $' + (params.length+1);
+  params.push(limit);
+  const result = await db.query(q, params);
+  res.json({ data: result.rows || [] });
+});
+
+module.exports = router;
+JS
+echo "Added backend/reports route (transactions)";
+
+# 11) Fix toast error: show safe catch if action RESET contains extra payload
+# add global safe reducer wrapper (client)
+cat > mobile/src/utils/safeDispatch.js <<'"JS"'
+export function safeResetPayload(payload) {
+  // ensure payload fits navigation.reset
+  if (!payload || typeof payload !== 'object') return { index:0, routes:[{ name:'Login' }] };
+  const routes = Array.isArray(payload.routes) ? payload.routes.map(r=>({ name: r.name })) : [{ name: 'Login' }];
+  return { index: 0, routes };
+}
+JS
+echo "Added safeResetPayload helper to avoid RESET action toast error";
+
+# 12) Add simple skeleton and improved input spacing for forms (example global styles)
+cat > mobile/src/components/GlobalStyles.js <<'"JS"'
+import { StyleSheet } from 'react-native';
+export default StyleSheet.create({
+  input: { borderWidth:1, borderColor:'#e6e6e6', padding:12, borderRadius:8, marginBottom:12 },
+  container: { padding:16, backgroundColor:'#f7f9fb', flex:1 }
+});
+JS
+echo "Added GlobalStyles";
+
+# 13) Print next steps
+echo "========================================"
+echo "MAICA FIXES: Files created/updated. Next steps:"
+echo "1) Install client deps: cd mobile && npm install. Backend: cd backend && npm install."
+echo "2) Run DB migrations: apply backend/migrations/*.sql to your Postgres (or use Supabase SQL editor)."
+echo "3) Replace backend/db stub with your real DB client or Supabase calls."
+echo "4) Test dashboard: ensure /reports/transactions returns your transactions (date range)."
+echo "5) Wire push token unregister on logout and set up push provider (FCM/Expo)."
+echo "6) Review login logo at mobile/assets/login-logo.jpeg and tweak size in Dashboard/Login screen if needed."
+echo "7) Integrate the formatCurrency helper across all screens (search for numeric displays and use it)."
+echo "8) For production, add server-side rate limiting on /auth/forgot and secure SMTP credentials."
+echo "========================================"
+echo "Done."
+'

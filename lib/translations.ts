@@ -104,6 +104,34 @@ export const translations = {
       preferences: 'Preferences',
       account: 'Account',
     },
+    learning: {
+      title: 'Financial Learning',
+      costPrice: {
+        title: 'What is Cost Price',
+        description: 'Understanding the amount you pay for products',
+        content: 'Cost Price is the amount you pay to acquire a product for resale. It includes the purchase price from suppliers, plus any import duties, shipping costs, or other charges directly related to obtaining the product. Knowing your cost price is essential for calculating profit margins.',
+      },
+      sellingPrice: {
+        title: 'What is Selling Price',
+        description: 'The price at which you sell to customers',
+        content: 'Selling Price (or Retail Price) is the amount customers pay when they buy your products. It should be higher than your cost price to generate profit. Your selling price is typically determined by market demand, competition, and the profit margin you want to achieve.',
+      },
+      profit: {
+        title: 'Understanding Profit',
+        description: 'How to calculate and maximize profits',
+        content: 'Profit = Selling Price - Cost Price. Profit Margin = (Profit / Selling Price) × 100%. Understanding your profit helps you make pricing decisions, identify which products are most profitable, and plan your business growth strategy effectively.',
+      },
+      inventory: {
+        title: 'How Inventory Works',
+        description: 'Managing your stock efficiently',
+        content: 'Inventory management is tracking what products you have in stock. Keep inventory levels balanced - not too high (which ties up cash) and not too low (which loses sales). Regularly monitor stock levels, set reorder points, and track product movement to optimize your inventory.',
+      },
+      pricing: {
+        title: 'Pricing Strategy',
+        description: 'Setting competitive and profitable prices',
+        content: 'Effective pricing strategies include: Cost-Plus Pricing (cost + fixed margin), Competitive Pricing (matching market rates), Value-Based Pricing (based on perceived customer value), and Dynamic Pricing (adjusting based on demand). Choose a strategy that aligns with your business goals.',
+      },
+    },
   },
   fr: {
     common: {
