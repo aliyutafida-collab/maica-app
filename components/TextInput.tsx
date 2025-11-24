@@ -1,4 +1,6 @@
-import { TextInput as RNTextInput, StyleSheet, View } from "react-native";
+import { useState } from "react";
+import { TextInput as RNTextInput, StyleSheet, View, Pressable } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "./ThemedText";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, BorderRadius, Typography } from "@/constants/theme";
@@ -27,29 +29,45 @@ export function TextInput({
   numberOfLines,
 }: TextInputProps) {
   const { theme } = useTheme();
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <View style={styles.container}>
       <ThemedText style={styles.label}>{label}</ThemedText>
-      <RNTextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={theme.textSecondary}
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        numberOfLines={numberOfLines}
-        style={[
-          styles.input,
-          {
-            backgroundColor: theme.surface,
-            borderColor: error ? theme.error : theme.border,
-            color: theme.text,
-          },
-          multiline && { height: numberOfLines ? numberOfLines * 40 : 80 },
-        ]}
-      />
+      <View style={styles.inputWrapper}>
+        <RNTextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          placeholderTextColor={theme.textSecondary}
+          secureTextEntry={secureTextEntry && !showPassword}
+          keyboardType={keyboardType}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.surface,
+              borderColor: error ? theme.error : theme.border,
+              color: theme.text,
+              paddingRight: secureTextEntry ? Spacing["4xl"] : Spacing.md,
+            },
+            multiline && { height: numberOfLines ? numberOfLines * 40 : 80 },
+          ]}
+        />
+        {secureTextEntry ? (
+          <Pressable
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeIcon}
+          >
+            <Feather
+              name={showPassword ? "eye-off" : "eye"}
+              size={20}
+              color={theme.textSecondary}
+            />
+          </Pressable>
+        ) : null}
+      </View>
       {error ? (
         <ThemedText style={[styles.error, { color: theme.error }]}>
           {error}
@@ -68,12 +86,24 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     marginBottom: Spacing.sm,
   },
+  inputWrapper: {
+    position: "relative",
+  },
   input: {
     ...Typography.body,
     height: Spacing.inputHeight,
     borderWidth: 1,
     borderRadius: BorderRadius.xs,
     paddingHorizontal: Spacing.md,
+  },
+  eyeIcon: {
+    position: "absolute",
+    right: Spacing.md,
+    top: Spacing.md,
+    justifyContent: "center",
+    alignItems: "center",
+    width: 40,
+    height: 40,
   },
   error: {
     ...Typography.caption,

@@ -17,6 +17,7 @@ const LANGUAGES = [
   { code: "en", name: "English" },
   { code: "ha", name: "Hausa" },
   { code: "yo", name: "Yoruba" },
+  { code: "fr", name: "Français" },
 ];
 
 export default function MoreScreen() {
