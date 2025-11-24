@@ -145,8 +145,12 @@ export default function ProductsScreen() {
             backgroundColor: theme.accent,
             opacity: pressed ? 0.8 : 1,
             bottom: paddingBottom + Spacing.lg,
+            shadowColor: "#000",
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 3 },
+            elevation: 6,
           },
-          Shadows.fab,
         ]}
       >
         <Feather name="plus" size={28} color="#FFFFFF" />
@@ -204,9 +208,9 @@ const styles = StyleSheet.create({
   fab: {
     position: "absolute",
     right: Spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
   },
