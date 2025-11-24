@@ -1,0 +1,423 @@
+bash -lc 'set -euo pipefail
+echo "=== MAICA: ALL FEATURES INSTALLER (Dashboard, Analytics, Photos, Push, Onboarding) ===";
+
+# Ensure directories
+mkdir -p mobile/src/screens mobile/src/components mobile/src/utils mobile/assets mobile/src/hooks backend/src/routes backend/src/utils;
+
+# Copy provided logo image into mobile assets if present
+SRC="/mnt/data/8034E078-581A-4530-AECE-D8AEC28ABD78.jpeg"
+if [ -f "$SRC" ]; then
+  cp "$SRC" mobile/assets/login-logo.jpeg
+  echo "Copied user-provided logo to mobile/assets/login-logo.jpeg"
+else
+  echo "Warning: no login image found at $SRC"
+fi
+
+# Append required mobile deps to package.json (create if missing)
+if [ ! -f mobile/package.json ]; then
+  cat > mobile/package.json <<'"JSON"'
+{
+  "name": "maica-mobile",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "dependencies": {},
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
+  }
+}
+JSON
+fi
+
+# Merge dependencies (safe append)
+node -e "const fs=require('fs');const p='mobile/package.json';const pkg=JSON.parse(fs.readFileSync(p));pkg.dependencies=Object.assign({
+  'expo':'^49.0.0',
+  'expo-notifications':'^0.18.0',
+  'expo-image-picker':'^14.0.0',
+  'lottie-react-native':'^6.1.0',
+  'react-native-svg':'^13.8.0',
+  'react-native-chart-kit':'^6.12.0',
+  '@react-native-async-storage/async-storage':'^1.20.0',
+  '@supabase/supabase-js':'^2.10.0',
+  'date-fns':'^2.30.0',
+  'react-native-onboarding-swiper':'^1.1.4'
+}, pkg.dependencies||{});fs.writeFileSync(p, JSON.stringify(pkg,null,2)); console.log('Updated mobile/package.json deps');"
+
+# 1) Add Lottie-based animated Dashboard header & premium cards
+cat > mobile/src/components/DashboardHeaderLottie.js <<'JS'
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import LottieView from "lottie-react-native";
+export default function DashboardHeaderLottie({ style }) {
+  return (
+    <View style={[styles.container, style]}>
+      <LottieView
+        source={require("../assets/maica-dashboard.json")}
+        autoPlay
+        loop
+        style={{ width: 120, height: 120 }}
+      />
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  container: { alignItems: "center", justifyContent: "center", marginVertical: 8 }
+});
+JS
+
+# Add a minimal Lottie placeholder file (JSON stub) to avoid runtime error; you should replace with a real Lottie file later.
+cat > mobile/assets/maica-dashboard.json <<'JSON'
+{"v":"5.5.7","fr":30,"ip":0,"op":60,"w":200,"h":200,"nm":"stub","layers":[]}
+JSON
+
+# 2) Analytics screen (react-native-chart-kit)
+cat > mobile/src/screens/Analytics.js <<'JS'
+import React, { useEffect, useState } from "react";
+import { View, ScrollView, Text, Dimensions } from "react-native";
+import { LineChart, PieChart } from "react-native-chart-kit";
+import api from "../utils/api";
+import { formatCurrency } from "../utils/formatters";
+
+const screenWidth = Dimensions.get("window").width - 32;
+
+export default function Analytics() {
+  const [salesSeries, setSalesSeries] = useState([]);
+  const [expenseBreakdown, setExpenseBreakdown] = useState([]);
+
+  useEffect(()=> {
+    async function load() {
+      try {
+        const res = await api.get('/reports/summaries'); // implement server endpoint
+        // expected: { monthlySales: [{label, value}], expenseCategories: [{name,value}] }
+        const monthly = res?.monthlySales || [];
+        const categories = res?.expenseCategories || [];
+        setSalesSeries(monthly.map(m=>m.value));
+        setExpenseBreakdown(categories.map(c=>({ name: c.name, population: c.value, color: c.color || '#'+Math.floor(Math.random()*16777215).toString(16), legendFontColor: '#7F7F7F', legendFontSize: 12 })));
+      } catch(e) { console.warn("analytics load", e) }
+    }
+    load();
+  },[]);
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: 16 }}>
+      <Text style={{ fontSize: 18, fontWeight: "700", marginBottom: 8 }}>Sales (Last 6 months)</Text>
+      <LineChart
+        data={{
+          labels: [], // server should return labels if you prefer
+          datasets: [{ data: salesSeries }],
+        }}
+        width={screenWidth}
+        height={220}
+        chartConfig={{
+          backgroundGradientFrom: "#fff",
+          backgroundGradientTo: "#fff",
+          decimalPlaces: 2,
+          color: (opacity=1) => `rgba(10,132,255, ${opacity})`,
+          labelColor: (opacity=1) => `rgba(0,0,0, ${opacity})`
+        }}
+        bezier
+        style={{ marginVertical: 8, borderRadius: 12 }}
+      />
+
+      <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 16 }}>Expenses by Category</Text>
+      {expenseBreakdown.length>0 && (
+        <PieChart
+          data={expenseBreakdown}
+          width={screenWidth}
+          height={220}
+          chartConfig={{ color: (opacity=1)=>`rgba(10,132,255,${opacity})`}}
+          accessor="population"
+          backgroundColor="transparent"
+          paddingLeft="15"
+          absolute
+        />
+      )}
+      {expenseBreakdown.length===0 && <Text style={{marginTop:8}}>No data yet</Text>}
+    </ScrollView>
+  );
+}
+JS
+
+# 3) Server endpoint for analytics summaries (Supabase-backed)
+cat > backend/src/routes/analytics.js <<'JS'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+
+// Returns monthly sales (last 6 months) and expense category totals
+router.get('/summaries', async (req,res)=> {
+  try {
+    // monthly sales - using transactions table (type: sale/expense)
+    const { data: monthlySales, error: mErr } = await supabase.rpc('monthly_sales_last_n_months', { n_months: 6 });
+    // category expenses
+    const { data: categories } = await supabase
+      .from('transactions')
+      .select('category, sum(amount) as total')
+      .eq('type','expense')
+      .group('category');
+    res.json({ monthlySales: monthlySales || [], expenseCategories: categories || [] });
+  } catch (e) {
+    console.error(e);
+    res.json({ monthlySales: [], expenseCategories: [] });
+  }
+});
+
+module.exports = router;
+JS
+
+# Add a helpful note: you must create Supabase RPC monthly_sales_last_n_months or adjust query.
+cat > backend/NOTES_ANALYTICS_RPC.txt <<'TEXT'
+Create a Postgres function or replace the RPC in analytics route.
+Example SQL (quick sketch) to compute monthly sales for N months:
+-- build a SQL function monthly_sales_last_n_months(n_months int)
+-- returns table(label text, value numeric)
+TEXT
+
+# 4) Product photos: client upload helper + gallery UI
+cat > mobile/src/utils/photoUploader.js <<'JS'
+import * as ImagePicker from "expo-image-picker";
+import supabase from "../utils/supabaseClient";
+
+export async function pickAndUpload(ownerId, productId) {
+  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!perm.granted) throw new Error("Permission required");
+  const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.7, base64: false });
+  if (res.cancelled) return null;
+  const fileUri = res.uri;
+  const parts = fileUri.split('/');
+  const name = parts[parts.length-1];
+  const response = await fetch(fileUri);
+  const blob = await response.blob();
+  const path = `products/${productId}/${name}`;
+  const { data, error } = await supabase.storage.from('product-photos').upload(path, blob, { cacheControl: '3600', upsert: true });
+  if (error) throw error;
+  const { publicURL } = supabase.storage.from('product-photos').getPublicUrl(path);
+  return publicURL;
+}
+JS
+
+cat > mobile/src/screens/ProductPhotos.js <<'JS'
+import React, { useState, useEffect } from "react";
+import { View, Text, Button, Image, FlatList } from "react-native";
+import { pickAndUpload } from "../utils/photoUploader";
+import api from "../utils/api";
+
+export default function ProductPhotos({ route }) {
+  const productId = route?.params?.productId;
+  const [images, setImages] = useState([]);
+
+  useEffect(()=> {
+    async function load() {
+      const res = await api.get(`/products/${productId}/photos`);
+      setImages(res?.data || []);
+    }
+    load();
+  },[]);
+
+  async function onAdd() {
+    try {
+      const url = await pickAndUpload(null, productId);
+      if (url) {
+        await api.post(`/products/${productId}/photos`, { url });
+        setImages(prev=>[...prev, url]);
+      }
+    } catch (e) { alert("Upload failed: "+e.message) }
+  }
+
+  return (
+    <View style={{flex:1,padding:12}}>
+      <Button title="Add Photo" onPress={onAdd}/>
+      <FlatList data={images} keyExtractor={i=>i} renderItem={({item})=> <Image source={{uri:item}} style={{width:120,height:120,margin:8}}/> } horizontal/>
+    </View>
+  );
+}
+JS
+
+# 5) Backend photo endpoints (store photo reference in products_photos table)
+cat > backend/src/routes/product_photos.js <<'JS'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+const { v4: uuidv4 } = require('uuid');
+
+// POST /products/:id/photos { url }
+router.post('/:id/photos', async (req,res) => {
+  const prod = req.params.id;
+  const { url } = req.body;
+  const { error } = await supabase.from('product_photos').insert([{ id: uuidv4(), product_id: prod, url }]);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok: true });
+});
+
+router.get('/:id/photos', async (req,res) => {
+  const prod = req.params.id;
+  const { data, error } = await supabase.from('product_photos').select('url').eq('product_id', prod);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ data: (data||[]).map(r=>r.url) });
+});
+
+module.exports = router;
+JS
+
+# migration stub for product_photos
+cat > backend/migrations/$(date +%Y%m%d%H%M%S)_product_photos.sql <<'SQL'
+CREATE TABLE IF NOT EXISTS product_photos (
+  id UUID PRIMARY KEY,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+SQL
+
+# 6) Push notifications: Expo Notifications registration + backend save token
+cat > mobile/src/hooks/usePushNotifications.js <<'JS'
+import Constants from "expo-constants";
+import * as Notifications from "expo-notifications";
+import { useEffect } from "react";
+import api from "../utils/api";
+import * as Device from "expo-device";
+
+export default function usePushNotifications(userId) {
+  useEffect(()=> {
+    async function register() {
+      if (!Device.isDevice) { console.warn("Push: physical device required"); return; }
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let finalStatus = existing;
+      if (existing !== "granted") {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+      if (finalStatus !== "granted") { console.warn("Push not granted"); return; }
+      const tokenData = await Notifications.getExpoPushTokenAsync();
+      const token = tokenData.data;
+      // send to backend to store in user record
+      await api.post("/auth/save-push-token", { userId, token }).catch(()=>{});
+    }
+    register();
+  }, [userId]);
+}
+JS
+
+# backend: route to save push token
+cat > backend/src/routes/push.js <<'JS'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+
+// POST /auth/save-push-token { userId, token }
+router.post('/save-push-token', async (req,res) => {
+  const { userId, token } = req.body;
+  if (!userId || !token) return res.status(400).json({ error: "Missing" });
+  // append token to profiles.push_tokens array (jsonb)
+  const { data, error } = await supabase.from('profiles').select('push_tokens').eq('id', userId).single();
+  let tokens = (data && data.push_tokens) || [];
+  if (!tokens.includes(token)) tokens.push(token);
+  await supabase.from('profiles').update({ push_tokens: tokens }).eq('id', userId);
+  res.json({ ok: true });
+});
+
+module.exports = router;
+JS
+
+# 7) Server helper to send Expo push notifications (backend util)
+cat > backend/src/utils/pushSender.js <<'JS'
+const fetch = require("node-fetch");
+
+async function sendExpoPush(tokens = [], title = "", body = "") {
+  const messages = tokens.map(t=>({ to: t, sound: "default", title, body }));
+  // chunking
+  for (let i=0;i<messages.length;i+=100) {
+    const chunk = messages.slice(i, i+100);
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type":"application/json" },
+      body: JSON.stringify(chunk)
+    });
+  }
+}
+
+module.exports = { sendExpoPush };
+JS
+
+# 8) Add onboarding flow screen (react-native-onboarding-swiper)
+cat > mobile/src/screens/Onboarding.js <<'JS'
+import React from "react";
+import { Image, Text, View } from "react-native";
+import Onboarding from "react-native-onboarding-swiper";
+
+export default function OnboardingScreen({ navigation }) {
+  return (
+    <Onboarding
+      onSkip={() => navigation.replace("Login")}
+      onDone={() => navigation.replace("Login")}
+      pages={[
+        { backgroundColor: "#fff", image: <Image source={require("../assets/login-logo.jpeg")} style={{width:140,height:140}}/>, title: "Welcome to Maica", subtitle: "Smart bookkeeping and insights" },
+        { backgroundColor: "#fff", image: <Image source={require("../assets/maica-dashboard.json")} style={{width:140,height:140}}/>, title: "Track Sales & Expenses", subtitle: "Realtime updates and reports" },
+        { backgroundColor: "#fff", image: <Image source={require("../assets/login-logo.jpeg")} style={{width:140,height:140}}/>, title: "Get insights", subtitle: "Charts, goals & notifications" }
+      ]}
+    />
+  );
+}
+JS
+
+# 9) Register new routes in backend src/index.js if present (safe append)
+INDEX="backend/src/index.js"
+if [ -f "$INDEX" ]; then
+  grep -q "analytics" "$INDEX" || sed -i "/app.use('\\/products',/a\\const analyticsRoutes = require('./routes/analytics');\\napp.use('/analytics', analyticsRoutes);" "$INDEX" || true
+  grep -q "product_photos" "$INDEX" || sed -i "/app.use('\\/products',/a\\const productPhotos = require('./routes/product_photos');\\napp.use('/products', productPhotos);" "$INDEX" || true
+  grep -q "push" "$INDEX" || sed -i "/app.use('\\/auth',/a\\const pushRoutes = require('./routes/push');\\napp.use('/auth', pushRoutes);" "$INDEX" || true
+fi
+echo "Linked new backend routes (analytics, product_photos, push) into backend/src/index.js if it exists."
+
+# 10) Add navigation entries (instructions only) - create a small nav helper stub
+cat > mobile/src/utils/navigationSetupNotes.txt <<'TEXT'
+Add the following routes to your React Navigation stack:
+- Onboarding (mobile/src/screens/Onboarding.js)
+- Login
+- Register
+- Dashboard
+- Analytics
+- Products
+- ProductPhotos (needs param: productId)
+
+Example: <Stack.Screen name="Onboarding" component={Onboarding} />
+TEXT
+
+# 11) Auto-scan script to find numeric displays that need formatCurrency integration
+cat > tools/scan-format-missing.sh <<'SH'
+#!/bin/bash
+grep -RIn --exclude-dir=node_modules --exclude-dir=.git -E "amount|price|qty|total|sales|expenses|balance" mobile/src \
+  | grep -v "formatCurrency" | grep -v "formatInteger" | tee mobile/missing-format-locations.txt
+echo "Scan complete: mobile/missing-format-locations.txt"
+SH
+chmod +x tools/scan-format-missing.sh
+
+# 12) Print final instructions
+echo "===================================="
+echo "MAICA: ALL FEATURES CREATED."
+echo ""
+echo "NEXT STEPS (required):"
+echo "1) Install mobile deps: cd mobile && npm install"
+echo "   - You may need to run: expo install react-native-svg lottie-react-native react-native-chart-kit expo-notifications expo-image-picker react-native-onboarding-swiper"
+echo "2) Backend: cd backend && npm install"
+echo "3) Supabase: create tables: products, product_photos, product_photos, product_photos, product_photos; create product-photos storage bucket named 'product-photos'"
+echo "   - Run SQL migrations in backend/migrations/*.sql; create password_resets and transactions tables if not present."
+echo "4) Configure environment variables (Replit secrets / server env):"
+echo "   - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY, DATABASE_URL, SMTP_*"
+echo "5) Expo push: follow Expo docs to configure credentials. For FCM, add Android config in your project and upload to EAS."
+echo "6) Replace placeholder Lottie file mobile/assets/maica-dashboard.json with a real Lottie animation file (download from lottiefiles.com) and ensure lib installs."
+echo "7) Add the analytics SQL or replace the RPC in backend/src/routes/analytics.js with direct queries if you prefer."
+echo "8) Run tools/scan-format-missing.sh to find UI files that need formatCurrency() applied, then patch them."
+echo ""
+echo "Optional: I can now generate:"
+echo " - a) Production-ready Lottie file recommendations and replacements"
+echo " - b) A full GitHub Actions pipeline to run EAS builds and run DB migrations"
+echo " - c) A prettier/animated Dashboard UI with Lottie + skeleton loaders + micro-interactions code (complete components)"
+echo ""
+echo "Run the following to install deps now:"
+echo "cd mobile && npm install || true"
+echo "cd ../backend && npm install || true"
+echo "===================================="
+echo "Done."
+'
