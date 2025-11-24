@@ -3,6 +3,7 @@ modules = ["nodejs-22"]
 
 [nix]
 channel = "stable-24_05"
+packages = ["gh"]
 
 [[ports]]
 localPort = 8081
@@ -23,10 +24,6 @@ externalPort = 3001
 [[ports]]
 localPort = 37663
 externalPort = 3003
-
-[[ports]]
-localPort = 43647
-externalPort = 4200
 
 [workflows]
 runButton = "Project"
