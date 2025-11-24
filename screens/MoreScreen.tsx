@@ -26,11 +26,17 @@ const LANGUAGES = [
   { code: "ig", name: "Igbo" },
 ];
 
+const THEME_MODES = [
+  { value: "light" as const, key: "themeLight" },
+  { value: "dark" as const, key: "themeDark" },
+  { value: "system" as const, key: "themeSystem" },
+];
+
 export default function MoreScreen() {
   const { user, logout, biometricAvailable } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
-  const { theme } = useTheme();
+  const { theme, themeMode, setThemeMode } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
 
@@ -68,6 +74,19 @@ export default function MoreScreen() {
         text: lang.name,
         onPress: async () => {
           await setLanguage(lang.code);
+        },
+      })).concat([{ text: t("common.cancel"), style: "cancel" }])
+    );
+  }
+
+  function handleThemeChange() {
+    Alert.alert(
+      t("more.theme"),
+      "Select your preferred theme",
+      THEME_MODES.map((mode) => ({
+        text: t(`more.${mode.key}`),
+        onPress: async () => {
+          await setThemeMode(mode.value);
         },
       })).concat([{ text: t("common.cancel"), style: "cancel" }])
     );
@@ -158,6 +177,31 @@ export default function MoreScreen() {
         <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
           {t("more.preferences")}
         </ThemedText>
+
+        <Pressable
+          onPress={handleThemeChange}
+          style={({ pressed }) => [
+            styles.menuItem,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
+              opacity: pressed ? 0.8 : 1,
+            },
+          ]}
+        >
+          <View style={styles.menuItemLeft}>
+            <Feather name="sun" size={24} color={theme.accent} />
+            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+              {t("more.theme")}
+            </ThemedText>
+          </View>
+          <View style={styles.menuItemRight}>
+            <ThemedText style={[styles.menuItemValue, { color: theme.textSecondary }]}>
+              {t(`more.${THEME_MODES.find((m) => m.value === themeMode)?.key || "themeSystem"}`)}
+            </ThemedText>
+            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          </View>
+        </Pressable>
 
         <Pressable
           onPress={handleLanguageChange}

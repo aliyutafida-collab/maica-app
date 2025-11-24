@@ -10,6 +10,20 @@ import RootNavigator from "@/navigation/RootNavigator";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
+
+function AppContent() {
+  const { navigationTheme, isDark } = useTheme();
+
+  return (
+    <>
+      <NavigationContainer theme={navigationTheme}>
+        <RootNavigator />
+      </NavigationContainer>
+      <StatusBar style={isDark ? "light" : "dark"} />
+    </>
+  );
+}
 
 export default function App() {
   return (
@@ -17,14 +31,13 @@ export default function App() {
     <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root}>
           <KeyboardProvider>
-            <LanguageProvider>
-              <AuthProvider>
-                <NavigationContainer>
-                  <RootNavigator />
-                </NavigationContainer>
-              </AuthProvider>
-            </LanguageProvider>
-            <StatusBar style="auto" />
+            <ThemeProvider>
+              <LanguageProvider>
+                <AuthProvider>
+                  <AppContent />
+                </AuthProvider>
+              </LanguageProvider>
+            </ThemeProvider>
           </KeyboardProvider>
         </GestureHandlerRootView>
       </SafeAreaProvider>
