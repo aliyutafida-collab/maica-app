@@ -1,0 +1,419 @@
+bash -lc 'set -euo pipefail
+echo "=== MAICA: SYNC TO OPTION 2 (Full backend + Supabase) ===";
+
+# ensure folders
+mkdir -p backend/src/routes backend/src/utils backend/migrations mobile/src/utils mobile/src/screens mobile/src/hooks mobile/assets;
+
+# copy provided logo into mobile assets (user uploaded file)
+SRC="/mnt/data/5285AD2A-6639-4851-A245-C124CD39866E.jpeg"
+if [ -f "$SRC" ]; then
+  cp "$SRC" mobile/assets/login-logo.jpeg
+  echo "Copied uploaded logo to mobile/assets/login-logo.jpeg"
+else
+  echo "Warning: uploaded logo file not found at $SRC"
+fi
+
+# 0) backend package.json (if absent)
+if [ ! -f backend/package.json ]; then
+  cat > backend/package.json <<'"JSON"'
+{
+  "name":"maica-backend",
+  "version":"1.0.0",
+  "main":"src/index.js",
+  "scripts":{"start":"node src/index.js","dev":"nodemon src/index.js"},
+  "dependencies":{"express":"^4.18.2","@supabase/supabase-js":"^2.10.0","node-fetch":"^2.6.7","uuid":"^9.0.0","bcrypt":"^5.1.0","nodemailer":"^6.9.3"}
+}
+JSON
+  echo "Created backend/package.json"
+fi
+
+# 1) Backend entry (express app)
+cat > backend/src/index.js <<'"JS"'
+const express = require('express');
+const bodyParser = require('body-parser');
+const authRoutes = require('./routes/auth');
+const productsRoutes = require('./routes/products');
+const analyticsRoutes = require('./routes/analytics');
+const pushRoutes = require('./routes/push');
+const productPhotos = require('./routes/product_photos');
+
+const app = express();
+app.use(bodyParser.json());
+app.use('/auth', authRoutes);
+app.use('/products', productsRoutes);
+app.use('/analytics', analyticsRoutes);
+app.use('/products', productPhotos);
+app.use('/auth', pushRoutes);
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, ()=> console.log(`MAICA backend listening on ${PORT}`));
+JS
+
+# 2) Supabase client helper (server uses SERVICE ROLE key)
+cat > backend/src/utils/supabaseClient.js <<'"JS"'
+const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) console.warn('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false }});
+module.exports = supabase;
+JS
+
+# 3) Email util (nodemailer) used by forgot/password flows
+cat > backend/src/utils/email.js <<'"JS"'
+const nodemailer = require('nodemailer');
+function createTransport() {
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST || '',
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: (process.env.SMTP_SECURE === 'true') || false,
+    auth: { user: process.env.SMTP_USER || '', pass: process.env.SMTP_PASS || '' }
+  });
+}
+async function sendResetEmail(to, link) {
+  const transporter = createTransport();
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM || '"Maica" <no-reply@maica.app>',
+    to,
+    subject: "Maica password reset",
+    html: `<p>Reset your password: <a href="${link}">${link}</a></p>`
+  });
+}
+module.exports = { sendResetEmail };
+JS
+
+# 4) Auth routes (Supabase admin flows: register/login/forgot/reset/logout)
+cat > backend/src/routes/auth.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+const crypto = require('crypto');
+const { v4: uuidv4 } = require('uuid');
+const { sendResetEmail } = require('../utils/email');
+
+// POST /auth/register { email, password, firstName, lastName, products }
+router.post('/register', async (req,res)=> {
+  const { email, password, firstName, lastName, products = [] } = req.body;
+  try {
+    const { data, error } = await supabase.auth.admin.createUser({ email, password, email_confirm: true });
+    if (error) return res.status(400).json({ error: error.message });
+    const userId = data.user.id;
+    await supabase.from('profiles').insert({ id: userId, first_name: firstName||null, last_name: lastName||null, push_tokens: [] });
+    for (const p of products) {
+      if (!p.name) continue;
+      await supabase.from('products').insert({ id: uuidv4(), owner_id: userId, name: p.name, price: Number(p.price)||0, qty: Number(p.qty)||0 });
+    }
+    res.json({ ok: true, userId });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+// POST /auth/login { email, password }
+router.post('/login', async (req,res)=> {
+  const { email, password } = req.body;
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return res.status(401).json({ error: error.message });
+    return res.json({ ok:true, user: data.user, session: data.session });
+  } catch (e) { console.error(e); res.status(500).json({ error: 'server error' }); }
+});
+
+// POST /auth/forgot { email } -> send email with single-use token
+router.post('/forgot', async (req,res)=> {
+  const { email } = req.body;
+  try {
+    const raw = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(raw).digest('hex');
+    const expiresAt = new Date(Date.now() + (Number(process.env.RESET_TOKEN_EXPIRY_MINUTES||60)*60*1000)).toISOString();
+    await supabase.from('password_resets').insert({ id: uuidv4(), email, token_hash: tokenHash, expires_at: expiresAt });
+    const resetLink = (process.env.MAICA_WEB_URL || "https://maica.app") + `/reset-password?token=${raw}&email=${encodeURIComponent(email)}`;
+    await sendResetEmail(email, resetLink);
+  } catch (e) { console.error(e); }
+  return res.json({ ok: true });
+});
+
+// POST /auth/reset { token, email, password }
+router.post('/reset', async (req,res)=> {
+  const { token, email, password } = req.body;
+  if (!token || !email || !password) return res.status(400).json({ error:'missing' });
+  try {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const { data } = await supabase.from('password_resets').select('*').eq('email', email).eq('token_hash', tokenHash).limit(1);
+    if (!data || data.length===0) return res.status(400).json({ error:'invalid token' });
+    if (new Date(data[0].expires_at) < new Date()) return res.status(400).json({ error:'expired' });
+    // update user password via admin
+    const { data:uData, error: uErr } = await supabase.auth.admin.updateUserById(data[0].user_id || data[0].email, { password });
+    // Note: if you stored user_id in reset rows, use that; else supabase admin update by email available via updateUserByEmail in some SDKs
+    await supabase.from('password_resets').delete().eq('id', data[0].id);
+    return res.json({ ok: true });
+  } catch (e) { console.error(e); res.status(500).json({ error:'server error' }); }
+});
+
+// POST /auth/logout
+router.post('/logout', async (req,res)=> { return res.json({ ok:true }); });
+
+module.exports = router;
+JS
+
+# 5) Products route (pagination)
+cat > backend/src/routes/products.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+
+router.get('/', async (req,res)=> {
+  const page = Number(req.query.page || 0);
+  const perPage = Math.min(Number(req.query.perPage || 20), 200);
+  const offset = page * perPage;
+  const { data, error } = await supabase.from('products').select('*').order('created_at',{ascending:false}).range(offset, offset + perPage - 1);
+  if (error) return res.status(500).json({ error: error.message });
+  return res.json({ data });
+});
+
+module.exports = router;
+JS
+
+# 6) Product photos endpoints
+cat > backend/src/routes/product_photos.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+
+router.post('/:id/photos', async (req,res) => {
+  const productId = req.params.id;
+  const { url } = req.body;
+  const { error } = await supabase.from('product_photos').insert([{ id: require('uuid').v4(), product_id: productId, url }]);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ok:true });
+});
+
+router.get('/:id/photos', async (req,res) => {
+  const productId = req.params.id;
+  const { data, error } = await supabase.from('product_photos').select('url').eq('product_id', productId);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ data: (data||[]).map(r=>r.url) });
+});
+
+module.exports = router;
+JS
+
+# 7) Reports / analytics route (RPC placeholder)
+cat > backend/src/routes/analytics.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+
+// GET /analytics/summaries
+router.get('/summaries', async (req,res)=> {
+  try {
+    // Replace or create RPC monthly_sales_last_n_months in Supabase SQL editor
+    const { data: monthlySales } = await supabase.rpc('monthly_sales_last_n_months', { n_months: 6 }).catch(()=>({ data: [] }));
+    // expense categories simple aggregate
+    const { data: cats } = await supabase.from('transactions').select('category, sum(amount)').eq('type','expense').group('category');
+    res.json({ monthlySales: monthlySales || [], expenseCategories: cats || [] });
+  } catch (e) { console.error(e); res.json({ monthlySales: [], expenseCategories: [] }); }
+});
+
+module.exports = router;
+JS
+
+# 8) Push token save route
+cat > backend/src/routes/push.js <<'"JS"'
+const express = require('express');
+const router = express.Router();
+const supabase = require('../utils/supabaseClient');
+
+router.post('/save-push-token', async (req,res) => {
+  const { userId, token } = req.body;
+  if (!userId || !token) return res.status(400).json({ error: 'missing' });
+  const { data } = await supabase.from('profiles').select('push_tokens').eq('id', userId).single();
+  const tokens = (data && data.push_tokens) || [];
+  if (!tokens.includes(token)) tokens.push(token);
+  await supabase.from('profiles').update({ push_tokens: tokens }).eq('id', userId);
+  res.json({ ok: true });
+});
+
+module.exports = router;
+JS
+
+# 9) Push sender helper (Expo)
+cat > backend/src/utils/pushSender.js <<'"JS"'
+const fetch = require('node-fetch');
+async function sendExpoPush(tokens, title, body) {
+  const messages = tokens.map(t=>({ to: t, sound: 'default', title, body }));
+  for (let i=0;i<messages.length;i+=100) {
+    const chunk = messages.slice(i,i+100);
+    await fetch('https://exp.host/--/api/v2/push/send', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(chunk) });
+  }
+}
+module.exports = { sendExpoPush };
+JS
+
+# 10) Migration stubs (safe, non-destructive)
+TIMESTAMP=$(date +%Y%m%d%H%M%S)
+cat > backend/migrations/${TIMESTAMP}_users_products_passwords_txns.sql <<'"SQL"'
+-- Create users/profiles, products, product_photos, password_resets, transactions tables (safe stubs)
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY,
+  first_name TEXT,
+  last_name TEXT,
+  push_tokens JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS products (
+  id UUID PRIMARY KEY,
+  owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  name TEXT,
+  price NUMERIC DEFAULT 0,
+  qty INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS product_photos (
+  id UUID PRIMARY KEY,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  id UUID PRIMARY KEY,
+  email TEXT,
+  user_id UUID,
+  token_hash TEXT,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS transactions (
+  id UUID PRIMARY KEY,
+  owner_id UUID,
+  amount NUMERIC,
+  type TEXT,
+  category TEXT,
+  date TIMESTAMPTZ DEFAULT NOW()
+);
+SQL
+
+echo "Created migration stub: backend/migrations/${TIMESTAMP}_users_products_passwords_txns.sql"
+
+# 11) Mobile: supabase client & api wrapper
+cat > mobile/src/utils/supabaseClient.js <<'"JS"'
+import { createClient } from '@supabase/supabase-js';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) console.warn('Supabase mobile env missing');
+export default createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+JS
+
+cat > mobile/src/utils/api.js <<'"JS"'
+import Constants from 'expo-constants';
+const API_URL = Constants.manifest?.extra?.apiUrl || process.env.API_URL || 'http://localhost:4000';
+async function request(path, opts={}) {
+  const url = API_URL + path;
+  const res = await fetch(url, { headers: { 'Content-Type':'application/json' }, ...opts });
+  return res.json();
+}
+export default { get: (p)=>request(p,{ method:'GET'}), post: (p,b)=>request(p,{ method:'POST', body: JSON.stringify(b) }) };
+JS
+
+# 12) Mobile: push registration hook (Expo)
+cat > mobile/src/hooks/usePushNotifications.js <<'"JS"'
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { useEffect } from 'react';
+import api from '../utils/api';
+export default function usePushNotifications(userId) {
+  useEffect(()=> {
+    async function register() {
+      if (!Device.isDevice) { console.warn('Push: physical device required'); return; }
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let status = existing;
+      if (existing !== 'granted') { const { status: newStatus } = await Notifications.requestPermissionsAsync(); status = newStatus; }
+      if (status !== 'granted') return;
+      const tokenData = await Notifications.getExpoPushTokenAsync();
+      const token = tokenData.data;
+      await api.post('/auth/save-push-token', { userId, token }).catch(()=>{});
+    }
+    register();
+  }, [userId]);
+}
+JS
+
+# 13) Mobile: improved Login screen (large logo)
+cat > mobile/src/screens/Login.js <<'"JS"'
+import React, { useState } from 'react';
+import { View, TextInput, TouchableOpacity, Text, Image, StyleSheet } from 'react-native';
+import api from '../utils/api';
+import { resetTo } from '../utils/navigationHelpers';
+export default function Login({ navigation }) {
+  const [email,setEmail]=useState(''); const [password,setPassword]=useState('');
+  const submit = async ()=> {
+    const r = await api.post('/auth/login',{ email,password }).catch(()=>null);
+    if (r && r.user) resetTo(navigation,'Dashboard',{ user: r.user });
+    else alert('Invalid login');
+  };
+  return (
+    <View style={styles.container}>
+      <Image source={require('../assets/login-logo.jpeg')} style={styles.logo}/>
+      <Text style={styles.title}>Maica</Text>
+      <TextInput placeholder="Email" value={email} onChangeText={setEmail} style={styles.input} keyboardType="email-address" />
+      <TextInput placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry style={styles.input} />
+      <TouchableOpacity onPress={submit} style={styles.btn}><Text style={styles.btnText}>Login</Text></TouchableOpacity>
+      <TouchableOpacity onPress={()=>navigation.navigate('ForgotPassword')}><Text style={styles.link}>Forgot password?</Text></TouchableOpacity>
+    </View>
+  );
+}
+const styles=StyleSheet.create({
+  container:{flex:1,justifyContent:'center',padding:24,backgroundColor:'#F7FAFC'},
+  logo:{width:180,height:180,alignSelf:'center',marginBottom:8,resizeMode:'contain'},
+  title:{fontSize:28,fontWeight:'800',textAlign:'center',marginBottom:16},
+  input:{borderWidth:1,borderColor:'#E6E9EE',padding:12,borderRadius:10,marginBottom:12,backgroundColor:'#FFF'},
+  btn:{backgroundColor:'#0A84FF',padding:14,borderRadius:10,alignItems:'center'},
+  btnText:{color:'#FFF',fontWeight:'700'},
+  link:{color:'#0A84FF',textAlign:'center',marginTop:12}
+});
+JS
+
+# 14) Mobile: navigationHelpers and formatters
+cat > mobile/src/utils/navigationHelpers.js <<'"JS"'
+export function resetTo(navigation, routeName, params={}) {
+  navigation.reset({ index:0, routes:[{ name: routeName, params }] });
+}
+JS
+cat > mobile/src/utils/formatters.js <<'"JS"'
+export function formatCurrency(n,currency='₦'){ if (n==null||Number.isNaN(Number(n))) return currency + "0.00"; const num=Number(n); return currency + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+export function formatInteger(n){ if (n==null||Number.isNaN(Number(n))) return "0"; return Number(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g,","); }
+JS
+
+# 15) Print env var checklist & next steps
+cat > MAICA_OPTION2_NEXT_STEPS.txt <<'"TEXT"'
+MAICA Option 2 - Required env vars & next steps:
+
+ENV VARS (set these in Replit secrets or your host):
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY  (server: service role - keep secret)
+- SUPABASE_ANON_KEY         (mobile public anon key)
+- MAICA_WEB_URL             (https://maica.app or your domain)
+- SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM
+- EXPO/EAS envs for push config (if using EAS)
+- NODE_ENV=production (for production hosts)
+
+NEXT STEPS:
+1) cd backend && npm install
+2) cd mobile && npm install (and run expo install required native deps if using Lottie/Notifications)
+3) In Supabase: create tables (profiles, products, product_photos, password_resets, transactions) OR run SQL from backend/migrations/*.sql
+4) Create Supabase storage bucket 'product-photos' and set public or signed URL rules
+5) Create RPC monthly_sales_last_n_months or edit backend analytics route to run custom SQL
+6) Configure SMTP and test /auth/forgot -> email receives link
+7) Configure Expo push (FCM) and test on a physical device
+8) Replace placeholders (Lottie file, real analytics SQL) as needed
+TEXT
+
+echo "Created MAICA_OPTION2_NEXT_STEPS.txt with required env vars and next steps"
+
+echo "=== MAICA: OPTION 2 SCAFFOLD COMPLETE ==="
+echo "Run: cd backend && npm install"
+echo "Run: cd mobile && npm install"
+echo "Then set env vars listed in MAICA_OPTION2_NEXT_STEPS.txt and run migrations in Supabase SQL editor."
+'
