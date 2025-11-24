@@ -140,11 +140,13 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.lg,
   },
   logo: {
-    width: 200,
-    height: 80,
-    marginBottom: Spacing.lg,
+    width: 320,
+    height: 128,
+    marginBottom: Spacing["2xl"],
   },
   title: {
     ...Typography.h1,
