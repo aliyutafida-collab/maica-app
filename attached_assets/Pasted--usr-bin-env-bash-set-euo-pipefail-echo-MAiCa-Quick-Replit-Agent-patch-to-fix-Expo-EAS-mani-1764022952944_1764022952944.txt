@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "== MAiCa: Quick Replit Agent patch to fix Expo/EAS manifest issue =="
+
+# 1) ensure assets folder exists and copy uploaded logo into project
+LOGO_SRC="/mnt/data/5285AD2A-6639-4851-A245-C124CD39866E.jpeg"
+mkdir -p mobile/assets
+if [ -f "$LOGO_SRC" ]; then
+  cp "$LOGO_SRC" mobile/assets/login-logo.jpeg
+  echo "✔ Copied logo -> mobile/assets/login-logo.jpeg"
+else
+  echo "⚠️ Logo not found at $LOGO_SRC — skip copy"
+fi
+
+# 2) write a fixed app.json (points icon/splash to mobile/assets/login-logo.jpeg)
+cat > app.json <<'JSON'
+{
+  "expo": {
+    "name": "Maica",
+    "slug": "maica",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "maica",
+    "platforms": ["ios", "android"],
+    "userInterfaceStyle": "light",
+    "icon": "./mobile/assets/login-logo.jpeg",
+    "splash": {
+      "image": "./mobile/assets/login-logo.jpeg",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E1520"
+    },
+    "extra": {
+      "apiUrl": "http://127.0.0.1:4000",
+      "supabaseUrl": "YOUR_SUPABASE_URL",
+      "supabaseAnonKey": "YOUR_SUPABASE_ANON_KEY"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.zanikon.maica"
+    },
+    "android": {
+      "package": "com.zanikon.maica",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./mobile/assets/login-logo.jpeg",
+        "backgroundColor": "#0E1520"
+      }
+    },
+    "web": {
+      "favicon": "./mobile/assets/login-logo.jpeg"
+    },
+    "plugins": [
+      "expo-splash-screen",
+      "expo-web-browser"
+    ]
+  }
+}
+JSON
+echo "✔ Wrote fixed app.json (uses ./mobile/assets/login-logo.jpeg)"
+
+# 3) ensure mobile API helper exists (so components calling api won't crash)
+API_FILE="mobile/src/utils/api.js"
+mkdir -p "$(dirname "$API_FILE")"
+if [ ! -f "$API_FILE" ]; then
+  cat > "$API_FILE" <<'JS'
+import Constants from 'expo-constants';
+const API_BASE = (Constants.expoConfig && Constants.expoConfig.extra && Constants.expoConfig.extra.apiUrl) || process.env.API_URL || 'http://127.0.0.1:4000';
+async function request(path, opts = {}) {
+  const url = API_BASE + path;
+  const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...opts });
+  return res.json().catch(()=>({}));
+}
+export default { get: (p)=>request(p, { method:'GET' }), post: (p,b)=>request(p, { method:'POST', body: JSON.stringify(b) }) };
+JS
+  echo "✔ Created mobile/src/utils/api.js (stub)"
+else
+  echo "ℹ️ mobile/src/utils/api.js already exists — skipped creating stub"
+fi
+
+# 4) (optional) install deps if package.json exists for mobile or backend
+if [ -f mobile/package.json ]; then
+  echo "➡ Installing mobile dependencies (this may take a while)..."
+  (cd mobile && npm ci) || echo "⚠️ mobile npm install failed or was skipped"
+else
+  echo "ℹ️ mobile/package.json not found — skip mobile deps install"
+fi
+
+if [ -f backend/package.json ]; then
+  echo "➡ Installing backend dependencies..."
+  (cd backend && npm ci) || echo "⚠️ backend npm install failed or was skipped"
+else
+  echo "ℹ️ backend/package.json not found — skip backend deps install"
+fi
+
+# 5) Try to start backend (in background) if present
+if [ -f backend/src/index.js ]; then
+  echo "➡ Starting backend (background)..."
+  (cd backend && (npm run dev 2>&1 & disown) ) || (cd backend && (node src/index.js 2>&1 & disown)) || echo "⚠️ Could not auto-start backend; start it manually: cd backend && node src/index.js"
+else
+  echo "ℹ️ backend/src/index.js not found — skip backend start"
+fi
+
+# 6) Start Expo for mobile (clear cache). NOTE: run this in foreground to view QR code.
+if command -v expo >/dev/null 2>&1; then
+  echo "➡ Starting Expo (mobile) with cleared cache. If this is running in Replit agent UI, copy the QR from the terminal."
+  cd mobile
+  expo start -c
+else
+  echo "⚠️ expo CLI not found. Install it or run: npm install -g expo-cli  (or use Replit's Expo integration)"
+  echo "After installing, run:"
+  echo "  cd mobile && expo start -c"
+fi
+
+echo "== DONE == "
+echo "If you see the raw JSON in Expo Go after scanning QR: (1) ensure you started Expo in mobile/ (2) ensure mobile/assets/login-logo.jpeg exists and app.json points to it (we corrected that)."
+echo "When ready to deploy to Render, change app.json extra.apiUrl to your Render URL (e.g. https://maica-backend.onrender.com) and commit + push to GitHub."
