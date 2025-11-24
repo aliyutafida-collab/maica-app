@@ -7,7 +7,7 @@ import {
   FlatList,
   Alert,
 } from "react-native";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, CommonActions } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
@@ -63,10 +63,27 @@ export default function ProductsScreen() {
     ]);
   }
 
+  function handleEditProduct(productId: string) {
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'AddProduct',
+        params: { productId },
+      })
+    );
+  }
+
+  function handleAddProduct() {
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'AddProduct',
+      })
+    );
+  }
+
   function renderProduct({ item }: { item: Product }) {
     return (
       <Pressable
-        onPress={() => navigation.navigate("AddProduct", { productId: item.id })}
+        onPress={() => handleEditProduct(item.id)}
         onLongPress={() => handleDelete(item.id)}
         style={({ pressed }) => [
           styles.productCard,
@@ -120,7 +137,7 @@ export default function ProductsScreen() {
         }
       />
       <Pressable
-        onPress={() => navigation.navigate("AddProduct")}
+        onPress={handleAddProduct}
         style={({ pressed }) => [
           styles.fab,
           {

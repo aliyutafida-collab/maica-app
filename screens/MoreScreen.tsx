@@ -74,7 +74,7 @@ export default function MoreScreen() {
       LANGUAGES.map((lang) => ({
         text: lang.name,
         onPress: async () => {
-          await setLanguage(lang.code);
+          await setLanguage(lang.code as any);
         },
       })).concat([{ text: t("common.cancel"), style: "cancel" }])
     );

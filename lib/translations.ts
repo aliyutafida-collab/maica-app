@@ -28,6 +28,8 @@ export const translations = {
       biometricFailed: 'Biometric authentication failed',
       passwordStrength: 'Password must be 8+ characters with uppercase, lowercase, number, and special character',
       tagline: 'Business Management Made Simple',
+      logout: 'Logout',
+      logoutConfirm: 'Are you sure you want to logout?',
     },
     dashboard: {
       welcome: 'Welcome',
@@ -132,6 +134,8 @@ export const translations = {
       biometricFailed: 'Échec de l\'authentification biométrique',
       passwordStrength: 'Le mot de passe doit contenir 8+ caractères avec majuscules, minuscules, chiffre et caractère spécial',
       tagline: 'Gestion commerciale simplifiée',
+      logout: 'Déconnexion',
+      logoutConfirm: 'Êtes-vous sûr de vouloir vous déconnecter ?',
     },
     dashboard: {
       welcome: 'Bienvenue',
@@ -236,6 +240,8 @@ export const translations = {
       biometricFailed: 'Shiga da Jiki bai yi aiki ba',
       passwordStrength: 'Kalmar sirri dole ta kasua 8+ haruffa tare da babbar haruf, ƙaramin haruf, lamba, da spesyal haruf',
       tagline: 'Sadarwar Kasua Gida',
+      logout: 'Fita',
+      logoutConfirm: 'Ka tabbata kana so ka fita?',
     },
     dashboard: {
       welcome: 'Maraba',
@@ -340,6 +346,8 @@ export const translations = {
       biometricFailed: 'Jẹ́ wó nítorí àilẹ̀kọ̀ọ́ Ara',
       passwordStrength: 'Ọ̀rọ̀ yíìdá gbọ̀dọ̀ ní 8+ àwọn ẹka pẹ̀lú àkọlójú, kékeré, nọ́mbà, ati ẹka pàtàkì',
       tagline: 'Ìtúnpalẹ̀ Iṣọ ìtọ́nij',
+      logout: 'Fo̩',
+      logoutConfirm: 'Ṣé o dá o lójú pé o fẹ́ jáde?',
     },
     dashboard: {
       welcome: 'Ì báwẹ́',
@@ -444,6 +452,8 @@ export const translations = {
       biometricFailed: 'Njọ ahụ adịghị eme',
       passwordStrength: 'Ebumnuche ga-enwe 8+ okwu nwere elu, ala, ọnụ ọgụ, na ụdị pụrụ iche',
       tagline: 'Njikwa Azụmahịa Dị Mfe',
+      logout: 'Pụta',
+      logoutConfirm: 'Ị ji n\'aka na ị chọrọ ịpụta?',
     },
     dashboard: {
       welcome: 'Nnọọ',
