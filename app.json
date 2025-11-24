@@ -1,27 +1,56 @@
 {
   "expo": {
-    "name": "MaiCa",
-    "slug": "maica-app",
+    "name": "Maica",
+    "slug": "maica",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "com.maica.app",
+    "scheme": "maica",
+    "platforms": ["ios", "android"],
+    "privacy": "public",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "extra": {
+      "apiUrl": "http://localhost:4000",
+      "supabaseUrl": "https://YOUR_SUPABASE_URL",
+      "supabaseAnonKey": "YOUR_SUPABASE_ANON_KEY"
+    },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.maica.business"
+      "bundleIdentifier": "com.zanikon.maica",
+      "infoPlist": {
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["maica"]
+          }
+        ]
+      },
+      "associatedDomains": ["applinks:maica.app"]
     },
     "android": {
+      "package": "com.zanikon.maica",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0B234A",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "monochromeImage": "./assets/images/android-icon-monochrome.png",
+        "backgroundColor": "#ffffff"
       },
-      "package": "com.maica.business",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "https",
+              "host": "maica.app",
+              "pathPrefix": "/reset-password"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "single",

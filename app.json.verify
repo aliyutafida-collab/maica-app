@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Maica",
+    "slug": "maica",
+    "scheme": "maica",
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.zanikon.maica",
+      "associatedDomains": ["applinks:maica.app"]
+    },
+    "android": {
+      "package": "com.zanikon.maica",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{"scheme": "https", "host": "maica.app"}],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
+    }
+  }
+}
