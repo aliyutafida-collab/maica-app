@@ -4,7 +4,13 @@
 
 MaiCa is a React Native mobile application built with Expo that provides comprehensive business management tools for small and medium-sized enterprises. The app focuses on inventory management, sales tracking, expense recording, tax calculations, and business analytics. It supports multiple languages (English, French, Hausa, Yoruba, Igbo) and offers both free trial and paid subscription tiers with AI-powered business advisory features.
 
-The application is designed for Nigerian small business owners who need simple, accessible tools to manage their operations, track finances, and understand tax obligations. The app emphasizes a clean, intuitive interface with offline-first capabilities using AsyncStorage for local data persistence.
+The application is designed for Nigerian small business owners who need simple, accessible tools to manage their operations, track finances, and understand tax obligations. The app features a clean, intuitive interface with full cloud synchronization via a dedicated Node.js/Express backend and Supabase PostgreSQL database.
+
+**Recent Architecture Update (Nov 24, 2025):**
+- Migrated from offline-first AsyncStorage to full-stack backend architecture
+- Backend: Node.js/Express with Supabase PostgreSQL
+- Authentication: Supabase Auth with password reset via email
+- Real-time sync across devices with cloud-based data persistence
 
 ## User Preferences
 
@@ -36,12 +42,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Authentication & Authorization
 
-**Local Authentication System**
-- **Implementation**: Custom email/password authentication stored in AsyncStorage
-- **User Data Structure**: Users stored with id, email, name, and createdAt timestamp
+**Backend Authentication System**
+- **Implementation**: Supabase Auth with email/password and JWT tokens
+- **User Data Structure**: Users managed by Supabase Auth, profiles extended in PostgreSQL
 - **Password Requirements**: 8+ characters with uppercase, lowercase, number, and special character validation
-- **Session Management**: Persistent login via AsyncStorage with `@maica_auth` key
+- **Session Management**: JWT tokens stored in device AsyncStorage with automatic refresh
+- **Password Reset**: Email-based token flow with 1-hour expiry via Nodemailer
 - **Biometric Support**: Optional fingerprint/face recognition using expo-local-authentication for quick login
+- **Multi-Device**: Users can login from multiple devices simultaneously
 
 **Business Setup Flow**
 - **Onboarding**: New users must complete a 3-step business setup before accessing the main app:
@@ -52,15 +60,18 @@ Preferred communication style: Simple, everyday language.
 
 ### Data Storage & Persistence
 
-**Local-First Architecture**
-- **Storage Technology**: AsyncStorage for all data persistence
+**Cloud-First Architecture with Supabase PostgreSQL**
+- **Storage Technology**: Supabase PostgreSQL with REST API layer (Express backend)
 - **Data Models**:
-  - **Products**: id, name, category, price, stock, description, userId, timestamps
-  - **Sales**: id, productId, productName, quantity, unitPrice, taxRate, discount, taxAmount, total, userId, createdAt
-  - **Expenses**: id, category (enum), amount, description, userId, createdAt
-  - **Users**: id, email, name, createdAt
-- **Rationale**: AsyncStorage provides simple, synchronous access to data without requiring backend infrastructure. Data is scoped by userId to support multi-account scenarios.
-- **Future Consideration**: The architecture could migrate to Drizzle ORM with local SQLite or remote Postgres for relational querying and better performance at scale.
+  - **profiles**: id, first_name, last_name, push_tokens, subscription_plan, trial_ends_at
+  - **products**: id, owner_id, name, category, price, cost_price, qty, description
+  - **sales**: id, owner_id, product_id, product_name, quantity, unit_price, tax_rate, discount, tax_amount, total
+  - **expenses**: id, owner_id, category, amount, description
+  - **product_photos**: id, product_id, url
+  - **transactions**: id, owner_id, type, category, amount (unified transaction log)
+- **Row Level Security (RLS)**: Enabled to ensure users only access their own data
+- **Sync Strategy**: Real-time cloud storage with automatic device sync via REST API calls
+- **Offline Support**: Mobile app can cache data locally for offline access and sync when reconnected
 
 ### Business Logic & Tax Calculations
 
@@ -116,6 +127,29 @@ Preferred communication style: Simple, everyday language.
 - Safe area insets handled consistently via `useScreenInsets` hook
 - Dynamic color contrast for text readability
 - Gesture handler integration for native feel
+
+## Backend Infrastructure
+
+### Backend Stack
+- **Framework**: Express.js (Node.js)
+- **Database**: Supabase PostgreSQL with PostGIS and full-text search
+- **Authentication**: Supabase Auth (JWT-based)
+- **Storage**: Supabase Storage for product photos
+- **Email**: Nodemailer for password resets and notifications
+- **Port**: 4000 (development), configurable for deployment
+
+### Backend Routes
+- **Auth**: `/auth/register`, `/auth/login`, `/auth/forgot`, `/auth/reset`, `/auth/save-push-token`
+- **Products**: `GET/POST/PUT/DELETE /products`, `GET/POST /products/:id/photos`
+- **Analytics**: `GET /analytics/summaries`
+- **Push Notifications**: `POST /push/notify`
+
+### Database Schema
+Located in `backend/migrations/001_initial_schema.sql`
+- Automatic UUID generation
+- Timestamped records (created_at)
+- Indexed columns for performance
+- Foreign key constraints with CASCADE delete
 
 ## External Dependencies
 
