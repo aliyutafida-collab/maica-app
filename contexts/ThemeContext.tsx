@@ -71,6 +71,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           border: theme.border,
           notification: theme.accent,
         },
+    fonts: isDark
+      ? NavigationDarkTheme.fonts
+      : NavigationDefaultTheme.fonts,
   };
 
   return (
