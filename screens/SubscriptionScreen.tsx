@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useScreenInsets } from '@/hooks/useScreenInsets';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { Spacing, Typography, BorderRadius } from '@/constants/theme';
+import { formatCurrency } from '@/lib/formatters';
 
 export default function SubscriptionScreen() {
   const { theme } = useTheme();
@@ -18,7 +19,7 @@ export default function SubscriptionScreen() {
     {
       id: 'standard',
       name: 'Standard',
-      price: '₦2,500',
+      price: formatCurrency(2500),
       period: '/month',
       features: [
         'Full inventory management',
@@ -32,7 +33,7 @@ export default function SubscriptionScreen() {
     {
       id: 'premium',
       name: 'Premium',
-      price: '₦5,000',
+      price: formatCurrency(5000),
       period: '/month',
       features: [
         'Everything in Standard',

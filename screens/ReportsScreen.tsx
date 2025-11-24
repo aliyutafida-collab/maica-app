@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { getSales, getExpenses } from "@/services/storage";
+import { formatCurrency } from "@/lib/formatters";
 
 export default function ReportsScreen() {
   const [totalSales, setTotalSales] = useState(0);
@@ -62,7 +63,7 @@ export default function ReportsScreen() {
             Total Sales
           </ThemedText>
           <ThemedText style={[styles.value, { color: theme.success }]}>
-            ₦{totalSales.toFixed(2)}
+            {formatCurrency(totalSales)}
           </ThemedText>
         </View>
 
@@ -73,7 +74,7 @@ export default function ReportsScreen() {
             Total Tax Collected
           </ThemedText>
           <ThemedText style={[styles.value, { color: theme.text }]}>
-            ₦{totalTax.toFixed(2)}
+            {formatCurrency(totalTax)}
           </ThemedText>
         </View>
 
@@ -84,7 +85,7 @@ export default function ReportsScreen() {
             Total Expenses
           </ThemedText>
           <ThemedText style={[styles.value, { color: theme.error }]}>
-            ₦{totalExpenses.toFixed(2)}
+            {formatCurrency(totalExpenses)}
           </ThemedText>
         </View>
 
@@ -100,7 +101,7 @@ export default function ReportsScreen() {
               { color: netProfit >= 0 ? theme.success : theme.error },
             ]}
           >
-            ₦{netProfit.toFixed(2)}
+            {formatCurrency(netProfit)}
           </ThemedText>
         </View>
       </ThemedView>

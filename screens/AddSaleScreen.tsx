@@ -13,6 +13,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { addSale, getProducts } from "@/services/storage";
 import { DEFAULT_TAX_RATE, calcSubtotal, calcTax, calcTotal } from "@/lib/tax";
+import { formatCurrency } from "@/lib/formatters";
 import type { Product } from "@/lib/types";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
@@ -189,7 +190,7 @@ export default function AddSaleScreen() {
                 Subtotal
               </ThemedText>
               <ThemedText style={[styles.totalValue, { color: theme.text }]}>
-                ₦{subtotal.toFixed(2)}
+                {formatCurrency(subtotal)}
               </ThemedText>
             </View>
             <View style={styles.totalRow}>
@@ -197,7 +198,7 @@ export default function AddSaleScreen() {
                 Tax
               </ThemedText>
               <ThemedText style={[styles.totalValue, { color: theme.text }]}>
-                ₦{taxAmount.toFixed(2)}
+                {formatCurrency(taxAmount)}
               </ThemedText>
             </View>
             <View style={styles.totalRow}>
@@ -214,7 +215,7 @@ export default function AddSaleScreen() {
                 Total
               </ThemedText>
               <ThemedText style={[styles.finalValue, { color: theme.primary }]}>
-                ₦{total.toFixed(2)}
+                {formatCurrency(total)}
               </ThemedText>
             </View>
           </View>

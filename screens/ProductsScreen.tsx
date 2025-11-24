@@ -17,6 +17,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useScreenInsets } from "@/hooks/useScreenInsets";
 import { Spacing, Typography, BorderRadius, Shadows } from "@/constants/theme";
 import { getProducts, deleteProduct } from "@/services/storage";
+import { formatCurrency } from "@/lib/formatters";
 import type { Product } from "@/lib/types";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
@@ -104,7 +105,7 @@ export default function ProductsScreen() {
         </View>
         <View style={styles.productMeta}>
           <ThemedText style={[styles.price, { color: theme.primary }]}>
-            ₦{item.price.toFixed(2)}
+            {formatCurrency(item.price)}
           </ThemedText>
           <ThemedText style={[styles.stock, { color: theme.textSecondary }]}>
             Stock: {item.stock}
