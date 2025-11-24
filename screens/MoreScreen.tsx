@@ -1,4 +1,5 @@
-import { View, StyleSheet, Pressable, Alert } from "react-native";
+import { useState, useEffect } from "react";
+import { View, StyleSheet, Pressable, Alert, Switch } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -10,6 +11,11 @@ import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
+import {
+  isBiometricEnabled,
+  setBiometricEnabled,
+  saveBiometricUser,
+} from "@/services/biometric";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -21,11 +27,21 @@ const LANGUAGES = [
 ];
 
 export default function MoreScreen() {
-  const { user, logout } = useAuth();
+  const { user, logout, biometricAvailable } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const [biometricEnabled, setBiometricEnabledState] = useState(false);
+
+  useEffect(() => {
+    loadBiometricSetting();
+  }, []);
+
+  async function loadBiometricSetting() {
+    const enabled = await isBiometricEnabled();
+    setBiometricEnabledState(enabled);
+  }
 
   function handleLogout() {
     Alert.alert(
@@ -55,6 +71,15 @@ export default function MoreScreen() {
         },
       })).concat([{ text: t("common.cancel"), style: "cancel" }])
     );
+  }
+
+  async function handleBiometricToggle(value: boolean) {
+    setBiometricEnabledState(value);
+    await setBiometricEnabled(value);
+    
+    if (value && user) {
+      await saveBiometricUser(user);
+    }
   }
 
   return (
@@ -158,6 +183,31 @@ export default function MoreScreen() {
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </View>
         </Pressable>
+
+        {biometricAvailable ? (
+          <View
+            style={[
+              styles.menuItem,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View style={styles.menuItemLeft}>
+              <Feather name="shield" size={24} color={theme.accent} />
+              <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+                {t("more.enableBiometric")}
+              </ThemedText>
+            </View>
+            <Switch
+              value={biometricEnabled}
+              onValueChange={handleBiometricToggle}
+              trackColor={{ false: theme.border, true: theme.accent }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.section}>

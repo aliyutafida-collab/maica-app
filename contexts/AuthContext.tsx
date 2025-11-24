@@ -1,11 +1,21 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { User } from "@/lib/types";
+import {
+  authenticateWithBiometric,
+  isBiometricEnabled,
+  isBiometricSupported,
+  saveBiometricUser,
+  getBiometricUser,
+  clearBiometricUser,
+} from "@/services/biometric";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  biometricAvailable: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithBiometric: () => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -18,10 +28,17 @@ const USERS_KEY = "@maica_users";
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   useEffect(() => {
     loadUser();
+    checkBiometricSupport();
   }, []);
+
+  async function checkBiometricSupport() {
+    const supported = await isBiometricSupported();
+    setBiometricAvailable(supported);
+  }
 
   async function loadUser() {
     try {
@@ -76,6 +93,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { password: _, ...userWithoutPassword } = foundUser;
     await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userWithoutPassword));
     setUser(userWithoutPassword);
+
+    const biometricEnabled = await isBiometricEnabled();
+    if (biometricEnabled) {
+      await saveBiometricUser(userWithoutPassword);
+    }
+  }
+
+  async function loginWithBiometric(): Promise<boolean> {
+    const enabled = await isBiometricEnabled();
+    if (!enabled) return false;
+
+    const userData = await getBiometricUser();
+    if (!userData) return false;
+
+    const authenticated = await authenticateWithBiometric("Unlock MaiCa");
+    if (authenticated) {
+      await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
+      setUser(userData);
+      return true;
+    }
+
+    return false;
   }
 
   async function logout() {
@@ -84,7 +123,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,
+        biometricAvailable,
+        login,
+        loginWithBiometric,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

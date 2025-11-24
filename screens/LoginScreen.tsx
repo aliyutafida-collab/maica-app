@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, StyleSheet, Image, Pressable, Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Feather } from "@expo/vector-icons";
 import { ThemedText } from "@/components/ThemedText";
 import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareScrollView";
 import { TextInput } from "@/components/TextInput";
@@ -9,8 +10,9 @@ import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { Spacing, Typography } from "@/constants/theme";
+import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
+import { isBiometricEnabled } from "@/services/biometric";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -18,14 +20,24 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showBiometricButton, setShowBiometricButton] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>(
     {}
   );
 
-  const { login } = useAuth();
+  const { login, loginWithBiometric, biometricAvailable } = useAuth();
   const { theme } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
+
+  useEffect(() => {
+    checkBiometricButton();
+  }, []);
+
+  async function checkBiometricButton() {
+    const enabled = await isBiometricEnabled();
+    setShowBiometricButton(biometricAvailable && enabled);
+  }
 
   async function handleLogin() {
     const newErrors: { email?: string; password?: string } = {};
@@ -45,6 +57,20 @@ export default function LoginScreen() {
       await login(email, password);
     } catch (error: any) {
       Alert.alert("Login Failed", error.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleBiometricLogin() {
+    setLoading(true);
+    try {
+      const success = await loginWithBiometric();
+      if (!success) {
+        Alert.alert(t("common.error"), t("auth.biometricFailed"));
+      }
+    } catch (error: any) {
+      Alert.alert(t("common.error"), error.message || t("auth.biometricFailed"));
     } finally {
       setLoading(false);
     }
@@ -91,6 +117,28 @@ export default function LoginScreen() {
             loading={loading}
           />
 
+          {showBiometricButton ? (
+            <Pressable
+              onPress={handleBiometricLogin}
+              disabled={loading}
+              style={({ pressed }) => [
+                styles.biometricButton,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.8 : 1,
+                },
+              ]}
+            >
+              <Feather name="unlock" size={20} color={theme.accent} />
+              <ThemedText
+                style={[styles.biometricText, { color: theme.accent }]}
+              >
+                {t("auth.useBiometric")}
+              </ThemedText>
+            </Pressable>
+          ) : null}
+
           <Pressable
             onPress={() => navigation.navigate("Register")}
             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
@@ -136,5 +184,18 @@ const styles = StyleSheet.create({
     ...Typography.body,
     textAlign: "center",
     marginTop: Spacing.xl,
+  },
+  biometricButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    height: Spacing.buttonHeight,
+    borderRadius: BorderRadius.xs,
+    borderWidth: 1,
+    marginTop: Spacing.md,
+    gap: Spacing.sm,
+  },
+  biometricText: {
+    ...Typography.button,
   },
 });

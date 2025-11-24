@@ -29,6 +29,8 @@ const translations = {
       alreadyHaveAccount: "Already have an account? Sign In",
       noAccount: "Don't have an account? Sign Up",
       tagline: "Business Management Made Simple",
+      useBiometric: "Use Biometric",
+      biometricFailed: "Biometric authentication failed",
     },
     dashboard: {
       title: "Dashboard",
@@ -102,6 +104,8 @@ const translations = {
       preferences: "Preferences",
       language: "Language",
       account: "Account",
+      biometricAuth: "Biometric Authentication",
+      enableBiometric: "Enable Face ID / Fingerprint",
     },
   },
   ha: {
@@ -126,6 +130,8 @@ const translations = {
       alreadyHaveAccount: "Kana da asusun? Shiga",
       noAccount: "Ba ka da asusun? Yi rajista",
       tagline: "Gudanar da Kasuwanci Cikin Sauƙi",
+      useBiometric: "Yi Amfani da Biometric",
+      biometricFailed: "Biometric bai yi nasara ba",
     },
     dashboard: {
       title: "Dashboard",
@@ -199,6 +205,8 @@ const translations = {
       preferences: "Zaɓuɓɓuka",
       language: "Harshe",
       account: "Asusun",
+      biometricAuth: "Tabbatar da Biometric",
+      enableBiometric: "Kunna Face ID / Sawun Yatsa",
     },
   },
   yo: {
@@ -223,6 +231,8 @@ const translations = {
       alreadyHaveAccount: "Ṣe o ni iroyin? Wọle",
       noAccount: "Ko ni iroyin? Forukọsilẹ",
       tagline: "Iṣakoso Iṣowo Ti O Rọrun",
+      useBiometric: "Lo Biometric",
+      biometricFailed: "Ijẹrisi Biometric kuna",
     },
     dashboard: {
       title: "Dashboard",
@@ -296,6 +306,8 @@ const translations = {
       preferences: "Awọn Ayanfẹ",
       language: "Ede",
       account: "Iroyin",
+      biometricAuth: "Ijẹrisi Biometric",
+      enableBiometric: "Mu Face ID / Itẹsiwaju Ika Ọwọ ṣiṣẹ",
     },
   },
   ig: {
@@ -320,6 +332,8 @@ const translations = {
       alreadyHaveAccount: "Ị nwere akaụntụ? Banye",
       noAccount: "Enweghị akaụntụ? Debanye aha",
       tagline: "Njikwa Azụmahịa Dị Mfe",
+      useBiometric: "Jiri Biometric",
+      biometricFailed: "Njirimara Biometric dara",
     },
     dashboard: {
       title: "Dashboard",
@@ -393,6 +407,8 @@ const translations = {
       preferences: "Mmasị",
       language: "Asụsụ",
       account: "Akaụntụ",
+      biometricAuth: "Njirimara Biometric",
+      enableBiometric: "Mee Face ID / Mkpịsị Aka",
     },
   },
 };
