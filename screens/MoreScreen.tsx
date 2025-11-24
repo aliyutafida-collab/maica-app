@@ -24,6 +24,7 @@ const LANGUAGES = [
   { code: "ha", name: "Hausa" },
   { code: "yo", name: "Yoruba" },
   { code: "ig", name: "Igbo" },
+  { code: "fr", name: "Français" },
 ];
 
 const THEME_MODES = [
