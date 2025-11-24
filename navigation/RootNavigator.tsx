@@ -4,26 +4,30 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import MainTabNavigator from "./MainTabNavigator";
 import LoginScreen from "@/screens/LoginScreen";
 import RegisterScreen from "@/screens/RegisterScreen";
+import BusinessSetupScreen from "@/screens/BusinessSetupScreen";
 import AddProductScreen from "@/screens/AddProductScreen";
 import AddSaleScreen from "@/screens/AddSaleScreen";
 import AddExpenseScreen from "@/screens/AddExpenseScreen";
 import AIAdvisorScreen from "@/screens/AIAdvisorScreen";
+import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type RootStackParamList = {
   MainTabs: undefined;
   Login: undefined;
   Register: undefined;
+  BusinessSetup: undefined;
   AddProduct: { productId?: string } | undefined;
   AddSale: undefined;
   AddExpense: undefined;
   AIAdvisor: undefined;
+  Subscription: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, setupComplete } = useAuth();
 
   if (isLoading) {
     return (
@@ -41,13 +45,20 @@ export default function RootNavigator() {
     >
       {user ? (
         <>
-          <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-          <Stack.Group screenOptions={{ presentation: "modal" }}>
-            <Stack.Screen name="AddProduct" component={AddProductScreen} />
-            <Stack.Screen name="AddSale" component={AddSaleScreen} />
-            <Stack.Screen name="AddExpense" component={AddExpenseScreen} />
-            <Stack.Screen name="AIAdvisor" component={AIAdvisorScreen} />
-          </Stack.Group>
+          {!setupComplete ? (
+            <Stack.Screen name="BusinessSetup" component={BusinessSetupScreen} />
+          ) : (
+            <>
+              <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+              <Stack.Group screenOptions={{ presentation: "modal" }}>
+                <Stack.Screen name="AddProduct" component={AddProductScreen} />
+                <Stack.Screen name="AddSale" component={AddSaleScreen} />
+                <Stack.Screen name="AddExpense" component={AddExpenseScreen} />
+                <Stack.Screen name="AIAdvisor" component={AIAdvisorScreen} />
+                <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+              </Stack.Group>
+            </>
+          )}
         </>
       ) : (
         <Stack.Group screenOptions={{ presentation: "modal" }}>

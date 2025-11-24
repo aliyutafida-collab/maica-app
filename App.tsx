@@ -11,6 +11,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 
 function AppContent() {
   const { navigationTheme, isDark } = useTheme();
@@ -34,7 +35,9 @@ export default function App() {
             <ThemeProvider>
               <LanguageProvider>
                 <AuthProvider>
-                  <AppContent />
+                  <SubscriptionProvider>
+                    <AppContent />
+                  </SubscriptionProvider>
                 </AuthProvider>
               </LanguageProvider>
             </ThemeProvider>

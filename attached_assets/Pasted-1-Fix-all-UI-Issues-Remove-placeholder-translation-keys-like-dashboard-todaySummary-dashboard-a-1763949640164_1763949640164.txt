@@ -1,0 +1,99 @@
+1. Fix all UI Issues
+	•	Remove placeholder translation keys like dashboard.todaySummary, dashboard.addSale etc.
+	•	Replace them with the correct English text.
+	•	Clean up spacing, alignment and font sizes.
+	•	Increase the MaiCa logo size across all screens.
+	•	Add the MaiCa logo to the header of every major screen.
+
+2. Product Setup Flow (Very Important)
+
+After signup, automatically show a “Start Your Business Setup” screen asking for:
+	•	Business name
+	•	Product category
+	•	Add first product (name, price, cost, stock qty, description)
+
+User should not see dashboard until setup is completed.
+
+3. Fix Product Page
+	•	Ensure the Products tab loads properly.
+	•	Make Add Product modal/page functional.
+	•	Show product list, stock levels, and cost/selling price margins.
+
+4. Language System Fix
+
+Restore ALL languages:
+	•	English
+	•	French
+	•	Hausa
+	•	Yoruba
+	•	Igbo
+
+Do not replace French with Igbo again.
+Fix any missing i18n keys.
+
+5. Subscription System
+
+Implement the MaiCa subscription model:
+
+Free Trial
+	•	60 days free for every new user.
+
+Standard Plan (₦2,500/month)
+	•	Full inventory management
+	•	Sales, expenses, reports
+	•	Multi-language features
+
+Premium Plan (₦5,000/month)
+	•	Everything in Standard
+	•	AI Advisor
+	•	Tax optimization helper
+	•	Advanced PDF exports
+	•	Profit forecasting
+
+Features:
+	•	Show “x days left in trial” banner
+	•	Lock premium features until subscribed
+	•	Add in-app Paystack + Flutterwave subscription buttons (test mode OK)
+
+6. AI Business Advisor
+
+Add an AI assistant page that:
+	•	Analyzes expenses, sales, profit trends
+	•	Gives simple business suggestions in English
+	•	(Use fake/example responses for now; no real AI API)
+
+7. Reports Page Improvements
+	•	Format currency correctly
+	•	Improve layout spacing
+	•	Add a “Download PDF Report” button (fake download for now)
+
+8. Dashboard Improvements
+	•	Show today’s summary
+	•	Weekly summary graph
+	•	Quick buttons: Add Sale, Add Expense, Add Product
+	•	Fix header fonts & theme colors (deep navy + cyan)
+
+9. Error Handling Fix
+
+Fix the crash: “Cannot read property ‘regular’ of undefined”
+This is caused by:
+	•	Incorrect theme fonts
+	•	Incorrect useHeaderConfigProps hook
+Fix theme configuration so all font weights exist.
+
+10. Authentication Enhancements
+	•	Add Face ID / Touch ID login after user enables it in Settings.
+(Use Expo Local Authentication)
+
+11. Branding & Assets
+	•	Replace any old KudiManager naming.
+	•	Ensure MaiCa logo and color theme is applied everywhere.
+	•	Update app.json/app.config to use MaiCa icon and splash screen.
+
+12. Final Build Verification
+	•	Fix Expo Go preview errors
+	•	Ensure no blank screens
+	•	Run a complete project cleanup
+	•	Confirm iOS + Android builds run without crashing
+
+Make all these changes, test locally, and confirm once the preview is stable.”

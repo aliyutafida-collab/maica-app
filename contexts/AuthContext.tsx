@@ -13,11 +13,13 @@ import {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  setupComplete: boolean;
   biometricAvailable: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithBiometric: () => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  completeSetup: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +30,7 @@ const USERS_KEY = "@maica_users";
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [setupComplete, setSetupComplete] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   useEffect(() => {
@@ -44,7 +47,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userData = await AsyncStorage.getItem(AUTH_KEY);
       if (userData) {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${parsedUser.id}`);
+        setSetupComplete(setupStatus === 'true');
       }
     } catch (error) {
       console.error("Failed to load user:", error);
@@ -76,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { password: _, ...userWithoutPassword } = newUser;
     await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userWithoutPassword));
     setUser(userWithoutPassword);
+    setSetupComplete(false);
   }
 
   async function login(email: string, password: string) {
@@ -93,6 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { password: _, ...userWithoutPassword } = foundUser;
     await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userWithoutPassword));
     setUser(userWithoutPassword);
+    
+    const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${userWithoutPassword.id}`);
+    setSetupComplete(setupStatus === 'true');
 
     const biometricEnabled = await isBiometricEnabled();
     if (biometricEnabled) {
@@ -111,6 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (authenticated) {
       await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
       setUser(userData);
+      const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${userData.id}`);
+      setSetupComplete(setupStatus === 'true');
       return true;
     }
 
@@ -120,6 +132,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function logout() {
     await AsyncStorage.removeItem(AUTH_KEY);
     setUser(null);
+    setSetupComplete(false);
+  }
+
+  function completeSetup() {
+    setSetupComplete(true);
   }
 
   return (
@@ -127,11 +144,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isLoading,
+        setupComplete,
         biometricAvailable,
         login,
         loginWithBiometric,
         register,
         logout,
+        completeSetup,
       }}
     >
       {children}

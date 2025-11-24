@@ -155,6 +155,7 @@ export default function MoreScreen() {
         </Pressable>
 
         <Pressable
+          onPress={() => navigation.navigate("Subscription")}
           style={({ pressed }) => [
             styles.menuItem,
             {
