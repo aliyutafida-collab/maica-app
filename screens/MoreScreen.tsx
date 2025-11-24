@@ -6,35 +6,61 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+const LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "ha", name: "Hausa" },
+  { code: "yo", name: "Yoruba" },
+];
+
 export default function MoreScreen() {
   const { user, logout } = useAuth();
+  const { language, setLanguage } = useLanguage();
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
   function handleLogout() {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log Out",
-        style: "destructive",
-        onPress: async () => {
-          await logout();
+    Alert.alert(
+      t("auth.logout"),
+      t("auth.logoutConfirm"),
+      [
+        { text: t("common.cancel"), style: "cancel" },
+        {
+          text: t("auth.logout"),
+          style: "destructive",
+          onPress: async () => {
+            await logout();
+          },
         },
-      },
-    ]);
+      ]
+    );
+  }
+
+  function handleLanguageChange() {
+    Alert.alert(
+      t("more.language"),
+      "Select your preferred language",
+      LANGUAGES.map((lang) => ({
+        text: lang.name,
+        onPress: async () => {
+          await setLanguage(lang.code);
+        },
+      })).concat([{ text: t("common.cancel"), style: "cancel" }])
+    );
   }
 
   return (
     <ScreenScrollView>
       <View style={styles.header}>
         <ThemedText style={[styles.title, { color: theme.text }]}>
-          More
+          {t("more.title")}
         </ThemedText>
       </View>
 
@@ -59,7 +85,7 @@ export default function MoreScreen() {
 
       <View style={styles.section}>
         <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-          Features
+          {t("more.features")}
         </ThemedText>
 
         <Pressable
@@ -76,7 +102,7 @@ export default function MoreScreen() {
           <View style={styles.menuItemLeft}>
             <Feather name="zap" size={24} color={theme.accent} />
             <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
-              AI Business Advisor
+              {t("more.aiAdvisor")}
             </ThemedText>
           </View>
           <Feather name="chevron-right" size={20} color={theme.textSecondary} />
@@ -95,7 +121,7 @@ export default function MoreScreen() {
           <View style={styles.menuItemLeft}>
             <Feather name="star" size={24} color={theme.accent} />
             <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
-              Subscription
+              {t("more.subscription")}
             </ThemedText>
           </View>
           <Feather name="chevron-right" size={20} color={theme.textSecondary} />
@@ -104,10 +130,11 @@ export default function MoreScreen() {
 
       <View style={styles.section}>
         <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-          Preferences
+          {t("more.preferences")}
         </ThemedText>
 
         <Pressable
+          onPress={handleLanguageChange}
           style={({ pressed }) => [
             styles.menuItem,
             {
@@ -120,12 +147,12 @@ export default function MoreScreen() {
           <View style={styles.menuItemLeft}>
             <Feather name="globe" size={24} color={theme.accent} />
             <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
-              Language
+              {t("more.language")}
             </ThemedText>
           </View>
           <View style={styles.menuItemRight}>
             <ThemedText style={[styles.menuItemValue, { color: theme.textSecondary }]}>
-              English
+              {LANGUAGES.find((l) => l.code === language)?.name || "English"}
             </ThemedText>
             <Feather name="chevron-right" size={20} color={theme.textSecondary} />
           </View>
@@ -134,7 +161,7 @@ export default function MoreScreen() {
 
       <View style={styles.section}>
         <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-          Account
+          {t("more.account")}
         </ThemedText>
 
         <Pressable
@@ -151,7 +178,7 @@ export default function MoreScreen() {
           <View style={styles.menuItemLeft}>
             <Feather name="log-out" size={24} color={theme.error} />
             <ThemedText style={[styles.menuItemText, { color: theme.error }]}>
-              Log Out
+              {t("auth.logout")}
             </ThemedText>
           </View>
         </Pressable>

@@ -8,6 +8,7 @@ import { TextInput } from "@/components/TextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Spacing, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
@@ -23,6 +24,7 @@ export default function LoginScreen() {
 
   const { login } = useAuth();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
   async function handleLogin() {
@@ -63,31 +65,31 @@ export default function LoginScreen() {
           <ThemedText
             style={[styles.subtitle, { color: theme.textSecondary }]}
           >
-            Business Management Made Simple
+            {t("auth.tagline")}
           </ThemedText>
         </View>
 
         <View style={styles.formContainer}>
           <TextInput
-            label="Email"
+            label={t("auth.email")}
             value={email}
             onChangeText={setEmail}
-            placeholder="Enter your email"
+            placeholder={t("auth.email")}
             keyboardType="email-address"
             error={errors.email}
           />
 
           <TextInput
-            label="Password"
+            label={t("auth.password")}
             value={password}
             onChangeText={setPassword}
-            placeholder="Enter your password"
+            placeholder={t("auth.password")}
             secureTextEntry
             error={errors.password}
           />
 
           <PrimaryButton
-            title="Sign In"
+            title={t("auth.login")}
             onPress={handleLogin}
             loading={loading}
           />
@@ -99,7 +101,7 @@ export default function LoginScreen() {
             <ThemedText
               style={[styles.linkText, { color: theme.accent }]}
             >
-              Don't have an account? Sign Up
+              {t("auth.noAccount")}
             </ThemedText>
           </Pressable>
         </View>

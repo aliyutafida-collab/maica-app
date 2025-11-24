@@ -8,6 +8,7 @@ import { TextInput } from "@/components/TextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/hooks/useTheme";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { Spacing, Typography } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
@@ -28,6 +29,7 @@ export default function RegisterScreen() {
 
   const { register } = useAuth();
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
   async function handleRegister() {
@@ -62,50 +64,50 @@ export default function RegisterScreen() {
     <ScreenKeyboardAwareScrollView>
       <View style={styles.container}>
         <ThemedText style={[styles.title, { color: theme.primary }]}>
-          Create Account
+          {t("auth.register")}
         </ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Join MaiCa to manage your business
+          {t("auth.tagline")}
         </ThemedText>
 
         <View style={styles.formContainer}>
           <TextInput
-            label="Full Name"
+            label={t("auth.fullName")}
             value={name}
             onChangeText={setName}
-            placeholder="Enter your name"
+            placeholder={t("auth.fullName")}
             error={errors.name}
           />
 
           <TextInput
-            label="Email"
+            label={t("auth.email")}
             value={email}
             onChangeText={setEmail}
-            placeholder="Enter your email"
+            placeholder={t("auth.email")}
             keyboardType="email-address"
             error={errors.email}
           />
 
           <TextInput
-            label="Password"
+            label={t("auth.password")}
             value={password}
             onChangeText={setPassword}
-            placeholder="At least 6 characters"
+            placeholder={t("auth.password")}
             secureTextEntry
             error={errors.password}
           />
 
           <TextInput
-            label="Confirm Password"
+            label={t("auth.confirmPassword")}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
-            placeholder="Re-enter your password"
+            placeholder={t("auth.confirmPassword")}
             secureTextEntry
             error={errors.confirmPassword}
           />
 
           <PrimaryButton
-            title="Create Account"
+            title={t("auth.register")}
             onPress={handleRegister}
             loading={loading}
           />
@@ -115,7 +117,7 @@ export default function RegisterScreen() {
             style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
           >
             <ThemedText style={[styles.linkText, { color: theme.accent }]}>
-              Already have an account? Sign In
+              {t("auth.alreadyHaveAccount")}
             </ThemedText>
           </Pressable>
         </View>

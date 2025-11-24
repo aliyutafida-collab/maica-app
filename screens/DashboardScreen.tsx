@@ -7,6 +7,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { getSales, getExpenses } from "@/services/storage";
@@ -20,6 +21,7 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
 
@@ -63,10 +65,10 @@ export default function DashboardScreen() {
     >
       <View style={styles.header}>
         <ThemedText style={[styles.greeting, { color: theme.text }]}>
-          Welcome, {user?.name}
+          {t("dashboard.welcome")}, {user?.name}
         </ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-          Today's Summary
+          {t("dashboard.todaySummary")}
         </ThemedText>
       </View>
 
@@ -76,7 +78,7 @@ export default function DashboardScreen() {
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Sales
+              {t("dashboard.sales")}
             </ThemedText>
             <ThemedText style={[styles.value, { color: theme.success }]}>
               ₦{todaySales.toFixed(2)}
@@ -84,7 +86,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.summaryItem}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Expenses
+              {t("dashboard.expenses")}
             </ThemedText>
             <ThemedText style={[styles.value, { color: theme.error }]}>
               ₦{todayExpenses.toFixed(2)}
@@ -92,7 +94,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.summaryItem}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              Net
+              {t("dashboard.net")}
             </ThemedText>
             <ThemedText
               style={[
@@ -108,7 +110,7 @@ export default function DashboardScreen() {
 
       <View style={styles.actionsContainer}>
         <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
-          Quick Actions
+          {t("dashboard.quickActions")}
         </ThemedText>
         <View style={styles.actionsGrid}>
           <Pressable
@@ -119,7 +121,7 @@ export default function DashboardScreen() {
             ]}
           >
             <Feather name="shopping-cart" size={32} color={theme.accent} />
-            <ThemedText style={styles.actionLabel}>Add Sale</ThemedText>
+            <ThemedText style={styles.actionLabel}>{t("dashboard.addSale")}</ThemedText>
           </Pressable>
 
           <Pressable
@@ -130,7 +132,7 @@ export default function DashboardScreen() {
             ]}
           >
             <Feather name="credit-card" size={32} color={theme.accent} />
-            <ThemedText style={styles.actionLabel}>Add Expense</ThemedText>
+            <ThemedText style={styles.actionLabel}>{t("dashboard.addExpense")}</ThemedText>
           </Pressable>
 
           <Pressable
@@ -141,7 +143,7 @@ export default function DashboardScreen() {
             ]}
           >
             <Feather name="package" size={32} color={theme.accent} />
-            <ThemedText style={styles.actionLabel}>Add Product</ThemedText>
+            <ThemedText style={styles.actionLabel}>{t("dashboard.addProduct")}</ThemedText>
           </Pressable>
         </View>
       </View>

@@ -1,0 +1,342 @@
+import { I18n } from "i18n-js";
+import { getLocales } from "expo-localization";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const LANGUAGE_KEY = "@maica_language";
+
+let languageChangeListeners: Array<() => void> = [];
+
+const translations = {
+  en: {
+    common: {
+      cancel: "Cancel",
+      save: "Save",
+      delete: "Delete",
+      edit: "Edit",
+      loading: "Loading...",
+      error: "Error",
+      success: "Success",
+    },
+    auth: {
+      login: "Sign In",
+      register: "Create Account",
+      email: "Email",
+      password: "Password",
+      confirmPassword: "Confirm Password",
+      fullName: "Full Name",
+      logout: "Log Out",
+      logoutConfirm: "Are you sure you want to log out?",
+      alreadyHaveAccount: "Already have an account? Sign In",
+      noAccount: "Don't have an account? Sign Up",
+      tagline: "Business Management Made Simple",
+    },
+    dashboard: {
+      title: "Dashboard",
+      welcome: "Welcome",
+      todaySummary: "Today's Summary",
+      sales: "Sales",
+      expenses: "Expenses",
+      net: "Net",
+      quickActions: "Quick Actions",
+      addSale: "Add Sale",
+      addExpense: "Add Expense",
+      addProduct: "Add Product",
+    },
+    products: {
+      title: "Products",
+      addProduct: "Add Product",
+      editProduct: "Edit Product",
+      name: "Product Name",
+      category: "Category",
+      price: "Price",
+      stock: "Stock Quantity",
+      description: "Description",
+      noProducts: "No products yet",
+      deleteConfirm: "Are you sure you want to delete this product?",
+    },
+    sales: {
+      title: "Sales",
+      recordSale: "Record Sale",
+      product: "Product",
+      quantity: "Quantity",
+      unitPrice: "Unit Price",
+      taxRate: "Tax Rate (%)",
+      discount: "Discount",
+      subtotal: "Subtotal",
+      tax: "Tax",
+      total: "Total",
+      noProducts: "No products available. Please add a product first.",
+    },
+    expenses: {
+      title: "Expenses",
+      addExpense: "Add Expense",
+      category: "Category",
+      amount: "Amount",
+      description: "Description",
+      categories: {
+        inventory: "Inventory",
+        utilities: "Utilities",
+        salaries: "Salaries",
+        rent: "Rent",
+        marketing: "Marketing",
+        other: "Other",
+      },
+    },
+    reports: {
+      title: "Reports",
+      businessReports: "Business Reports",
+      allTimeSummary: "All Time Summary",
+      totalSales: "Total Sales",
+      totalTax: "Total Tax Collected",
+      totalExpenses: "Total Expenses",
+      netProfit: "Net Profit",
+      taxBreakdown: "Tax Breakdown",
+      taxRateDefault: "Tax Rate (Default)",
+      totalTaxLiability: "Total Tax Liability",
+    },
+    more: {
+      title: "More",
+      features: "Features",
+      aiAdvisor: "AI Business Advisor",
+      subscription: "Subscription",
+      preferences: "Preferences",
+      language: "Language",
+      account: "Account",
+    },
+  },
+  ha: {
+    common: {
+      cancel: "Soke",
+      save: "Ajiye",
+      delete: "Share",
+      edit: "Gyara",
+      loading: "Ana lodawa...",
+      error: "Kuskure",
+      success: "Nasara",
+    },
+    auth: {
+      login: "Shiga",
+      register: "Ƙirƙiri Asusun",
+      email: "Imel",
+      password: "Kalmar Sirri",
+      confirmPassword: "Tabbatar da Kalmar Sirri",
+      fullName: "Cikakken Suna",
+      logout: "Fita",
+      logoutConfirm: "Kana da tabbacin kana so ka fita?",
+      alreadyHaveAccount: "Kana da asusun? Shiga",
+      noAccount: "Ba ka da asusun? Yi rajista",
+      tagline: "Gudanar da Kasuwanci Cikin Sauƙi",
+    },
+    dashboard: {
+      title: "Dashboard",
+      welcome: "Barka da zuwa",
+      todaySummary: "Taƙaitaccen Yau",
+      sales: "Tallace-tallace",
+      expenses: "Kashe Kuɗi",
+      net: "Riba",
+      quickActions: "Ayyuka Masu Sauri",
+      addSale: "Ƙara Tallace",
+      addExpense: "Ƙara Kashe Kuɗi",
+      addProduct: "Ƙara Kaya",
+    },
+    products: {
+      title: "Kayayyaki",
+      addProduct: "Ƙara Kaya",
+      editProduct: "Gyara Kaya",
+      name: "Sunan Kaya",
+      category: "Nau'i",
+      price: "Farashi",
+      stock: "Adadi",
+      description: "Bayani",
+      noProducts: "Babu kayayyaki har yanzu",
+      deleteConfirm: "Kana da tabbacin kana so ka share wannan kayan?",
+    },
+    sales: {
+      title: "Tallace-tallace",
+      recordSale: "Rubuta Tallace",
+      product: "Kaya",
+      quantity: "Adadi",
+      unitPrice: "Farashin Ɗaya",
+      taxRate: "Haraji (%)",
+      discount: "Rangwame",
+      subtotal: "Jimlar Ƙarami",
+      tax: "Haraji",
+      total: "Jimla",
+      noProducts: "Babu kayayyaki. Don Allah ƙara kaya da farko.",
+    },
+    expenses: {
+      title: "Kashe Kuɗi",
+      addExpense: "Ƙara Kashe Kuɗi",
+      category: "Nau'i",
+      amount: "Adadin Kuɗi",
+      description: "Bayani",
+      categories: {
+        inventory: "Kayayyaki",
+        utilities: "Ayyuka",
+        salaries: "Albashi",
+        rent: "Haya",
+        marketing: "Tallace-tallace",
+        other: "Sauran",
+      },
+    },
+    reports: {
+      title: "Rahotanni",
+      businessReports: "Rahoton Kasuwanci",
+      allTimeSummary: "Taƙaitaccen Duka Lokaci",
+      totalSales: "Jimlar Tallace-tallace",
+      totalTax: "Jimlar Haraji",
+      totalExpenses: "Jimlar Kashe Kuɗi",
+      netProfit: "Riba",
+      taxBreakdown: "Rabe-raben Haraji",
+      taxRateDefault: "Adadin Haraji (Asali)",
+      totalTaxLiability: "Jimlar Bashin Haraji",
+    },
+    more: {
+      title: "Ƙari",
+      features: "Abubuwa",
+      aiAdvisor: "Mai Ba da Shawara na AI",
+      subscription: "Biyan Kuɗi",
+      preferences: "Zaɓuɓɓuka",
+      language: "Harshe",
+      account: "Asusun",
+    },
+  },
+  yo: {
+    common: {
+      cancel: "Fagile",
+      save: "Fi pamọ",
+      delete: "Paarẹ",
+      edit: "Ṣatunkọ",
+      loading: "Nṣiṣẹ...",
+      error: "Aṣiṣe",
+      success: "Aṣeyọri",
+    },
+    auth: {
+      login: "Wọle",
+      register: "Ṣẹda Iroyin",
+      email: "Imeeli",
+      password: "Ọrọ Aṣina",
+      confirmPassword: "Jẹrisi Ọrọ Aṣina",
+      fullName: "Orukọ Kikun",
+      logout: "Jade",
+      logoutConfirm: "Ṣe o da ọ loju pe o fẹ jade?",
+      alreadyHaveAccount: "Ṣe o ni iroyin? Wọle",
+      noAccount: "Ko ni iroyin? Forukọsilẹ",
+      tagline: "Iṣakoso Iṣowo Ti O Rọrun",
+    },
+    dashboard: {
+      title: "Dashboard",
+      welcome: "Kaabo",
+      todaySummary: "Akopọ Loni",
+      sales: "Tita",
+      expenses: "Inawo",
+      net: "Ere",
+      quickActions: "Awọn Iṣe Iyara",
+      addSale: "Fi Tita Kun",
+      addExpense: "Fi Inawo Kun",
+      addProduct: "Fi Ọja Kun",
+    },
+    products: {
+      title: "Awọn Ọja",
+      addProduct: "Fi Ọja Kun",
+      editProduct: "Ṣatunkọ Ọja",
+      name: "Orukọ Ọja",
+      category: "Iru",
+      price: "Idiyele",
+      stock: "Iye",
+      description: "Apejuwe",
+      noProducts: "Ko si awọn ọja sibẹsibẹ",
+      deleteConfirm: "Ṣe o da ọ loju pe o fẹ paarẹ ọja yii?",
+    },
+    sales: {
+      title: "Tita",
+      recordSale: "Kọ Tita Silẹ",
+      product: "Ọja",
+      quantity: "Iye",
+      unitPrice: "Idiyele Ọkan",
+      taxRate: "Owo-ori (%)",
+      discount: "Dinku",
+      subtotal: "Apapọ Kekere",
+      tax: "Owo-ori",
+      total: "Lapapọ",
+      noProducts: "Ko si awọn ọja. Jọwọ fi ọja kun ni akọkọ.",
+    },
+    expenses: {
+      title: "Inawo",
+      addExpense: "Fi Inawo Kun",
+      category: "Iru",
+      amount: "Iye Owo",
+      description: "Apejuwe",
+      categories: {
+        inventory: "Awọn Ọja",
+        utilities: "Awọn Iṣẹ",
+        salaries: "Owo Oṣu",
+        rent: "Iyalo",
+        marketing: "Ipolowo",
+        other: "Miiran",
+      },
+    },
+    reports: {
+      title: "Awọn Ijabọ",
+      businessReports: "Awọn Ijabọ Iṣowo",
+      allTimeSummary: "Akopọ Gbogbo Akoko",
+      totalSales: "Lapapọ Tita",
+      totalTax: "Lapapọ Owo-ori Ti A Gba",
+      totalExpenses: "Lapapọ Inawo",
+      netProfit: "Ere Gidi",
+      taxBreakdown: "Pipin Owo-ori",
+      taxRateDefault: "Iye Owo-ori (Aiyipada)",
+      totalTaxLiability: "Lapapọ Gbese Owo-ori",
+    },
+    more: {
+      title: "Diẹ Sii",
+      features: "Awọn Ẹya",
+      aiAdvisor: "Olugbani AI",
+      subscription: "Alabapin",
+      preferences: "Awọn Ayanfẹ",
+      language: "Ede",
+      account: "Iroyin",
+    },
+  },
+};
+
+const i18n = new I18n(translations);
+
+i18n.enableFallback = true;
+i18n.defaultLocale = "en";
+
+export async function initializeI18n() {
+  const savedLanguage = await AsyncStorage.getItem(LANGUAGE_KEY);
+  if (savedLanguage) {
+    i18n.locale = savedLanguage;
+  } else {
+    const locales = getLocales();
+    const deviceLocale = locales[0]?.languageCode || "en";
+    i18n.locale = deviceLocale;
+  }
+}
+
+export async function changeLanguage(locale: string) {
+  i18n.locale = locale;
+  await AsyncStorage.setItem(LANGUAGE_KEY, locale);
+  languageChangeListeners.forEach((listener) => listener());
+}
+
+export function getCurrentLanguage() {
+  return i18n.locale;
+}
+
+export function translate(key: string, options?: any) {
+  return i18n.t(key, options);
+}
+
+export function subscribeToLanguageChange(listener: () => void) {
+  languageChangeListeners.push(listener);
+  return () => {
+    languageChangeListeners = languageChangeListeners.filter(
+      (l) => l !== listener
+    );
+  };
+}
+
+export default i18n;
