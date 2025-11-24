@@ -22,3 +22,8 @@ export function formatDecimal(value: number | null | undefined, decimals = 2): s
   if (value == null || isNaN(value)) return "0." + "0".repeat(decimals);
   return Number(value).toFixed(decimals).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
+
+export function formatPercent(value: number | null | undefined, decimals = 1): string {
+  if (value == null || isNaN(value)) return "0%";
+  return Number(value).toFixed(decimals) + "%";
+}

@@ -1,0 +1,420 @@
+bash -lc 'set -euo pipefail
+echo "=== MAICA: UPGRADE EVERYTHING PATCH — START ==="
+
+# ensure dirs
+mkdir -p mobile/src/constants mobile/src/lib mobile/src/components mobile/src/screens mobile/assets mobile/src/hooks
+
+# 1) Create design system: mobile/src/constants/theme.ts
+cat > mobile/src/constants/theme.ts <<'"TS"'
+/**
+ * Central design tokens for Maica mobile
+ * Exports: Spacing, Typography, BorderRadius, Shadows, Colors (light/dark)
+ */
+export const Spacing = {
+  xs: 6,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  "2xl": 24,
+  "3xl": 36,
+  "4xl": 48,
+};
+
+export const BorderRadius = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 18,
+};
+
+export const Typography = {
+  heading: { fontSize: 22, lineHeight: 28 },
+  subheading: { fontSize: 16, lineHeight: 22 },
+  body: { fontSize: 14, lineHeight: 20 },
+  caption: { fontSize: 12, lineHeight: 16 },
+  small: { fontSize: 11, lineHeight: 14 },
+};
+
+export const Shadows = {
+  // Safe cross-platform shadow for FAB / cards
+  fab: {
+    shadowColor: "#000",
+    shadowOpacity: 0.16,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 8,
+  },
+  card: {
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+};
+
+export const Colors = {
+  light: {
+    backgroundRoot: "#F7FAFC",
+    surface: "#FFFFFF",
+    text: "#0B132A",
+    textSecondary: "#7B7F87",
+    border: "#E6E9EE",
+    primary: "#0A84FF",
+    accent: "#00C2CB",
+  },
+  dark: {
+    backgroundRoot: "#0E1520",
+    surface: "#17212A",
+    text: "#E6EEF3",
+    textSecondary: "#95A1B0",
+    border: "#222831",
+    primary: "#2DD4BF",
+    accent: "#00C2CB",
+  },
+};
+TS
+echo "✔ created mobile/src/constants/theme.ts"
+
+# 2) Create formatters (if missing): mobile/src/lib/formatters.ts
+cat > mobile/src/lib/formatters.ts <<'"TS"'
+export function formatCurrency(n: number | string | null | undefined, currency = "₦") {
+  if (n == null || Number.isNaN(Number(n))) return currency + "0.00";
+  const num = Number(n);
+  return currency + num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+export function formatInteger(n: number | string | null | undefined) {
+  if (n == null || Number.isNaN(Number(n))) return "0";
+  return Number(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+TS
+echo "✔ created mobile/src/lib/formatters.ts"
+
+# 3) Create a small Skeleton loader component: mobile/src/components/Skeleton.tsx
+cat > mobile/src/components/Skeleton.tsx <<'"TSX"'
+import React from "react";
+import { View, Animated, StyleSheet } from "react-native";
+
+export default function Skeleton({ width = "100%", height = 16, style = {} }: any) {
+  return <View style={[styles.container, { width, height }, style]} />;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: "#e6eef9",
+    borderRadius: 8,
+    opacity: 0.9,
+  },
+});
+TSX
+echo "✔ created mobile/src/components/Skeleton.tsx"
+
+# 4) Add Dashboard screen (premium) mobile/src/screens/Dashboard.tsx
+cat > mobile/src/screens/Dashboard.tsx <<'"TSX"'
+import React, { useEffect, useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from "react-native";
+import { formatCurrency } from "@/lib/formatters";
+import Skeleton from "@/components/Skeleton";
+import { Spacing, Typography } from "@/constants/theme";
+import api from "@/utils/api"; // existing API wrapper
+
+export default function Dashboard() {
+  const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [period, setPeriod] = useState("week");
+
+  async function load() {
+    setLoading(true);
+    try {
+      const res = await api.get("/reports/transactions?limit=1000");
+      setTransactions(res?.data || []);
+    } catch (e) {
+      console.warn("Dashboard load failed", e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  // simple aggregation here (client-side)
+  const sales = transactions.filter((t:any)=>t.type==="sale").reduce((s:any, t:any)=> s + Number(t.amount || 0), 0);
+  const expenses = transactions.filter((t:any)=>t.type==="expense").reduce((s:any, t:any)=> s + Number(t.amount || 0), 0);
+  const net = sales - expenses;
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: Spacing.lg }}>
+      <View style={{ alignItems: "center", marginBottom: Spacing.lg }}>
+        <Image source={require("../assets/login-logo.jpeg")} style={{ width: 140, height: 140, resizeMode: "contain" }} />
+        <Text style={{ ...Typography.heading, fontWeight: "800", marginTop: 6 }}>Welcome to Maica</Text>
+      </View>
+
+      <View style={styles.periodRow}>
+        {["today","week","month"].map(p=>(
+          <TouchableOpacity key={p} style={[styles.periodBtn, period===p && styles.periodActive]} onPress={()=>setPeriod(p)}>
+            <Text style={{ color: period===p ? "#fff" : "#9AA7B2", fontWeight: "700" }}>{p.charAt(0).toUpperCase()+p.slice(1)}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      <View style={styles.metricsCard}>
+        {loading ? (
+          <>
+            <Skeleton height={28} style={{ marginBottom: 12 }} />
+            <Skeleton height={28} style={{ marginBottom: 6 }} />
+          </>
+        ) : (
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            <View style={styles.metric}>
+              <Text style={styles.metricLabel}>Sales</Text>
+              <Text style={[styles.metricValue, { color: "#16A34A" }]}>{formatCurrency(sales)}</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricLabel}>Expenses</Text>
+              <Text style={[styles.metricValue, { color: "#EF4444" }]}>{formatCurrency(expenses)}</Text>
+            </View>
+            <View style={styles.metric}>
+              <Text style={styles.metricLabel}>Net</Text>
+              <Text style={[styles.metricValue, { color: "#06B6D4" }]}>{formatCurrency(net)}</Text>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <Text style={{ ...Typography.subheading, marginTop: Spacing.lg, marginBottom: Spacing.sm }}>Quick Actions</Text>
+      <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+        <TouchableOpacity style={styles.actionCard}><Text>+ Add Sale</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionCard}><Text>+ Add Expense</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionCard}><Text>+ Add Product</Text></TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  periodRow: { flexDirection: "row", justifyContent: "flex-start", gap: 8 },
+  periodBtn: { paddingVertical: 8, paddingHorizontal: 14, borderRadius: 12, backgroundColor: "transparent", borderWidth: 0 },
+  periodActive: { backgroundColor: "#0A84FF" },
+  metricsCard: { marginTop: 12, padding: 16, borderRadius: 12, backgroundColor: "#0F1724" },
+  metric: { alignItems: "center", flex: 1 },
+  metricLabel: { color: "#9AA7B2" },
+  metricValue: { fontSize: 18, fontWeight: "700" },
+  actionCard: { flex: 1, marginHorizontal: 6, padding: 14, borderRadius: 12, backgroundColor: "#0B1220", alignItems: "center" }
+});
+TSX
+echo "✔ created mobile/src/screens/Dashboard.tsx"
+
+# 5) Reports screen: mobile/src/screens/ReportsScreen.tsx
+cat > mobile/src/screens/ReportsScreen.tsx <<'"TSX"'
+import React, { useEffect, useState } from "react";
+import { ScrollView, Text, View, Dimensions } from "react-native";
+import { LineChart, PieChart } from "react-native-chart-kit";
+import api from "@/utils/api";
+import { Spacing, Typography } from "@/constants/theme";
+import { formatCurrency } from "@/lib/formatters";
+
+const w = Dimensions.get("window").width - 32;
+
+export default function ReportsScreen() {
+  const [monthlySales, setMonthlySales] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+
+  useEffect(()=> {
+    async function load() {
+      try {
+        const res = await api.get("/analytics/summaries");
+        setMonthlySales(res.monthlySales || []);
+        setCategories((res.expenseCategories || []).map((c:any)=>({ name: c.category || c.name, population: Number(c.total || c.value || 0), color: '#'+Math.floor(Math.random()*16777215).toString(16), legendFontColor:'#7F7F7F', legendFontSize:12 })));
+      } catch (e) { console.warn(e) }
+    }
+    load();
+  },[]);
+
+  return (
+    <ScrollView contentContainerStyle={{ padding: Spacing.lg }}>
+      <Text style={{ ...Typography.heading, marginBottom: Spacing.md }}>Analytics</Text>
+
+      <Text style={{ marginBottom: 6 }}>Sales (last months)</Text>
+      <LineChart
+        data={{
+          labels: monthlySales.map((m:any)=>m.label),
+          datasets: [{ data: monthlySales.map((m:any)=>Number(m.value||0)) }]
+        }}
+        width={w}
+        height={220}
+        chartConfig={{ backgroundGradientFrom:'#fff', backgroundGradientTo:'#fff', color:(o=1)=>`rgba(10,132,255,${o})`, labelColor:(o=1)=>`rgba(0,0,0,${o})` }}
+        style={{ borderRadius: 12, marginVertical: 8 }}
+      />
+
+      <Text style={{ marginTop: 12 }}>Expenses by category</Text>
+      {categories.length>0 ? (
+        <PieChart data={categories} width={w} height={220} accessor="population" backgroundColor="transparent" paddingLeft="15" />
+      ) : <Text style={{ marginTop: 8 }}>No data</Text>}
+    </ScrollView>
+  );
+}
+TSX
+echo "✔ created mobile/src/screens/ReportsScreen.tsx"
+
+# 6) Add AddProduct editor: mobile/src/screens/AddProduct.tsx
+cat > mobile/src/screens/AddProduct.tsx <<'"TSX"'
+import React, { useState, useEffect } from "react";
+import { View, TextInput, Button, Text, Image, StyleSheet, Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import api from "@/utils/api";
+import { formatCurrency } from "@/lib/formatters";
+import { Spacing } from "@/constants/theme";
+
+export default function AddProduct({ route, navigation }: any) {
+  const productId = route?.params?.productId;
+  const [name, setName] = useState("");
+  const [price, setPrice] = useState("");
+  const [qty, setQty] = useState("");
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
+  useEffect(()=> {
+    if (productId) {
+      // fetch product details (stub)
+      (async ()=> {
+        const res = await api.get(`/products?productId=${productId}`);
+        const p = (res?.data && res.data[0]) || res;
+        if (p) { setName(p.name||""); setPrice(String(p.price||"")); setQty(String(p.qty||"")); }
+      })();
+    }
+  },[productId]);
+
+  async function pickImage() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) { Alert.alert("Permission required"); return; }
+    const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.7 });
+    if (!res.cancelled) {
+      setImageUri(res.uri);
+      // TODO: upload to storage and save url on product
+    }
+  }
+
+  async function save() {
+    if (!name) return Alert.alert("Name required");
+    const body = { name, price: Number(price||0), qty: Number(qty||0) };
+    if (productId) {
+      await api.post(`/products/${productId}/update`, body);
+    } else {
+      await api.post("/products", body);
+    }
+    navigation.goBack();
+  }
+
+  return (
+    <View style={{ padding: Spacing.lg }}>
+      <Text style={{ fontWeight: "700", marginBottom: 8 }}>{productId ? "Edit Product" : "Add Product"}</Text>
+      <TextInput placeholder="Name" value={name} onChangeText={setName} style={styles.input} />
+      <TextInput placeholder="Price" value={price} onChangeText={setPrice} keyboardType="numeric" style={styles.input} />
+      <TextInput placeholder="Qty" value={qty} onChangeText={setQty} keyboardType="numeric" style={styles.input} />
+      <Button title="Pick Image" onPress={pickImage} />
+      {imageUri ? <Image source={{ uri: imageUri }} style={{ width: 120, height: 120, marginTop: 12 }} /> : null}
+      <View style={{ height: 12 }} />
+      <Button title="Save" onPress={save} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  input: { borderWidth: 1, borderColor: "#E6E9EE", padding: 12, borderRadius: 10, marginBottom: 10 }
+});
+TSX
+echo "✔ created mobile/src/screens/AddProduct.tsx"
+
+# 7) Update existing ProductsScreen.tsx to ensure it imports theme and uses Shadows.fab safely
+# If file exists, back it up then patch to include fallback shadow usage
+PROD="mobile/src/screens/ProductsScreen.tsx"
+if [ -f "$PROD" ]; then
+  cp "$PROD" "${PROD}.bak"
+  echo "Backup: ${PROD}.bak"
+
+  # Ensure theme import exists (if not, insert)
+  grep -q "constants/theme" "$PROD" || sed -i.bak "1i import { Spacing, Typography, BorderRadius, Shadows } from \"@/constants/theme\";" "$PROD"
+
+  # Replace the style array so Shadows.fab is last item but with fallback if undefined
+  perl -0777 -pe "s/(Pressable\\n\\s*onPress=\\{handleAddProduct\\}[\\s\\S]*?style=\\(\\{\\s*pressed\\s*\\}\\) => \\[)([^\\]]*)(\\]\\s*\\>)/\$1\$2, typeof Shadows !== 'undefined' && Shadows.fab ? Shadows.fab : { shadowColor:'#000', shadowOpacity:0.15, shadowRadius:8, shadowOffset:{width:0,height:3}, elevation:6 }$3/s" -i "$PROD" 2>/dev/null || true
+
+  # Ensure the fab style has right size & border radius
+  perl -0777 -pe "s/width:\\s*56/width: 64/g; s/height:\\s*56/height: 64/g; s/borderRadius:\\s*28/borderRadius: 32/g;" -i "$PROD"
+  echo "✔ patched $PROD (backup saved)"
+fi
+
+# 8) Enlarge logo in Login screens if they exist (both .js and .tsx variants)
+for LOGIN in mobile/src/screens/Login.js mobile/src/screens/Login.tsx; do
+  if [ -f "$LOGIN" ]; then
+    cp "$LOGIN" "${LOGIN}.bak"
+    sed -i.bak -E "s/(width:)[[:space:]]*[0-9]+/\\1 320/g" "$LOGIN" || true
+    sed -i.bak -E "s/(height:)[[:space:]]*[0-9]+/\\1 320/g" "$LOGIN" || true
+    # Also try to adjust inline image props
+    perl -0777 -pe "s/(<Image[^>]*style=\\{)([^}]*)(\\}[^>]*>)/\$1{...($2), width:320, height:320}\\3/s" -i "$LOGIN" 2>/dev/null || true
+    echo "✔ updated logo sizing in $LOGIN (backup saved)"
+  fi
+done
+
+# 9) Add or update navigation notes (safe, not modifying nav automatically)
+cat > mobile/src/navigation/NOTES_NAVIGATION_UPGRADE.txt <<'TXT'
+After this upgrade add these routes (React Navigation):
+- Dashboard (mobile/src/screens/Dashboard.tsx)
+- Products (mobile/src/screens/ProductsScreen.tsx)
+- AddProduct (mobile/src/screens/AddProduct.tsx)
+- Reports (mobile/src/screens/ReportsScreen.tsx)
+Ensure your navigation stack imports these files and names match.
+TXT
+echo "✔ wrote mobile/src/navigation/NOTES_NAVIGATION_UPGRADE.txt"
+
+# 10) Add small utils/api stub if missing (safe)
+if [ ! -f mobile/src/utils/api.js ] && [ ! -f mobile/src/utils/api.ts ]; then
+  cat > mobile/src/utils/api.js <<'"JS"'
+import Constants from "expo-constants";
+const API_BASE = (Constants.manifest && Constants.manifest.extra && Constants.manifest.extra.apiUrl) || process.env.API_URL || "http://localhost:4000";
+async function request(path, opts = {}) {
+  const url = API_BASE + path;
+  const res = await fetch(url, { headers: { "content-type": "application/json" }, ...opts });
+  return res.json();
+}
+export default { get: (p)=>request(p, { method: "GET" }), post: (p,b)=>request(p, { method: "POST", body: JSON.stringify(b) }) };
+JS
+  echo "✔ created mobile/src/utils/api.js (stub)"
+fi
+
+# 11) Ensure assets: copy uploaded product screen file to assets (if exists)
+# Developer note: uploaded path from user earlier is /mnt/data/ProductsScreen.tsx (we used it); also used two logo files earlier.
+LOGO_SRC="/mnt/data/5285AD2A-6639-4851-A245-C124CD39866E.jpeg"
+if [ -f "$LOGO_SRC" ]; then
+  cp "$LOGO_SRC" mobile/assets/login-logo.jpeg || true
+  echo "✔ copied uploaded logo to mobile/assets/login-logo.jpeg"
+fi
+
+# 12) Tidy up and print summary
+echo "=== MAICA: UPGRADE EVERYTHING PATCH — COMPLETE ==="
+echo "Files added/updated:"
+echo " - mobile/src/constants/theme.ts"
+echo " - mobile/src/lib/formatters.ts"
+echo " - mobile/src/components/Skeleton.tsx"
+echo " - mobile/src/screens/Dashboard.tsx"
+echo " - mobile/src/screens/ReportsScreen.tsx"
+echo " - mobile/src/screens/AddProduct.tsx"
+echo " - mobile/src/navigation/NOTES_NAVIGATION_UPGRADE.txt"
+echo ""
+echo "Patched existing:"
+echo " - mobile/src/screens/ProductsScreen.tsx (backup saved as .bak)"
+echo " - mobile/src/screens/Login.(js|tsx) (if present, backups saved)"
+echo ""
+echo "NEXT STEPS (after running):"
+echo " 1) Restart Expo: cd mobile && npm start"
+echo " 2) Ensure react-native-chart-kit, expo-image-picker are installed: expo install react-native-chart-kit expo-image-picker"
+echo " 3) Wire newly added screens into your navigation stack (see NOTES_NAVIGATION_UPGRADE.txt)"
+echo " 4) For AddProduct image upload, replace TODO with your Supabase / backend storage upload logic"
+echo " 5) If you use path aliases like @/..., ensure tsconfig/metro are configured; otherwise adjust imports to relative paths"
+echo ""
+echo "If anything breaks, restore backups (.bak files) in the same folders."
+echo "=== MAICA: UPGRADE EVERYTHING PATCH — FINISHED ==="
+'

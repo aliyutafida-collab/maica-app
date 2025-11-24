@@ -79,49 +79,66 @@ export const BorderRadius = {
 export const Typography = {
   h1: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: 700,
     lineHeight: 40,
   },
   h2: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: 700,
     lineHeight: 36,
   },
   h3: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: 700,
     lineHeight: 32,
   },
   h4: {
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: 600,
     lineHeight: 28,
   },
   body: {
     fontSize: 16,
-    fontWeight: '400',
+    fontWeight: 400,
     lineHeight: 24,
   },
   bodySm: {
     fontSize: 14,
-    fontWeight: '400',
+    fontWeight: 400,
     lineHeight: 20,
   },
   bodyXs: {
     fontSize: 12,
-    fontWeight: '400',
+    fontWeight: 400,
     lineHeight: 16,
   },
   label: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 500,
     lineHeight: 20,
   },
   caption: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: 500,
     lineHeight: 16,
   },
+};
+
+export const Shadows = {
+  fab: {
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  } as const,
+  card: {
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  } as const,
 };
 
 export const Fonts = {

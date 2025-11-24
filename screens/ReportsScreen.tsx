@@ -143,10 +143,10 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.h1,
     marginBottom: Spacing.xs,
-  },
+  } as any,
   subtitle: {
     ...Typography.body,
-  },
+  } as any,
   card: {
     borderRadius: BorderRadius.sm,
     borderWidth: 1,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     ...Typography.h3,
     marginBottom: Spacing.lg,
-  },
+  } as any,
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -165,10 +165,10 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.body,
-  },
+  } as any,
   value: {
     ...Typography.body,
-    fontWeight: "600",
+    fontWeight: 600 as any,
   },
   divider: {
     height: 1,

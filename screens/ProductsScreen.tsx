@@ -178,22 +178,22 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
   },
-  productName: {
+  productName: ({
     ...Typography.body,
-    fontWeight: "600",
+    fontWeight: 600,
     marginBottom: Spacing.xs,
-  },
+  } as any),
   category: {
-    ...Typography.small,
+    ...Typography.bodyXs,
   },
   productMeta: {
     alignItems: "flex-end",
   },
-  price: {
+  price: ({
     ...Typography.body,
-    fontWeight: "600",
+    fontWeight: 600,
     marginBottom: Spacing.xs,
-  },
+  } as any),
   stock: {
     ...Typography.caption,
   },
