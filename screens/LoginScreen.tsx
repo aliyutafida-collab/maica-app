@@ -55,13 +55,10 @@ export default function LoginScreen() {
       <View style={styles.container}>
         <View style={styles.logoContainer}>
           <Image
-            source={require("@/assets/images/icon.png")}
+            source={require("@/assets/images/maica-logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />
-          <ThemedText style={[styles.title, { color: theme.primary }]}>
-            MaiCa
-          </ThemedText>
           <ThemedText
             style={[styles.subtitle, { color: theme.textSecondary }]}
           >
@@ -121,8 +118,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing["3xl"],
   },
   logo: {
-    width: 100,
-    height: 100,
+    width: 200,
+    height: 80,
     marginBottom: Spacing.lg,
   },
   title: {

@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
-const primaryNavy = "#052F5F";
-const accentTeal = "#0FB1B7";
+const primaryNavy = "#0A2342";
+const accentTeal = "#1BB5C9";
 
 export const Colors = {
   light: {

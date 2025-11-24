@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, StyleSheet, Pressable, Alert } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Image } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { ThemedText } from "@/components/ThemedText";
@@ -63,12 +63,18 @@ export default function RegisterScreen() {
   return (
     <ScreenKeyboardAwareScrollView>
       <View style={styles.container}>
-        <ThemedText style={[styles.title, { color: theme.primary }]}>
-          {t("auth.register")}
-        </ThemedText>
-        <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
-          {t("auth.tagline")}
-        </ThemedText>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("@/assets/images/maica-logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <ThemedText
+            style={[styles.subtitle, { color: theme.textSecondary }]}
+          >
+            {t("auth.tagline")}
+          </ThemedText>
+        </View>
 
         <View style={styles.formContainer}>
           <TextInput
@@ -131,6 +137,15 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: Spacing["3xl"],
   },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: Spacing["3xl"],
+  },
+  logo: {
+    width: 200,
+    height: 80,
+    marginBottom: Spacing.lg,
+  },
   title: {
     ...Typography.h1,
     marginBottom: Spacing.sm,
@@ -138,6 +153,7 @@ const styles = StyleSheet.create({
   subtitle: {
     ...Typography.body,
     marginBottom: Spacing.xl,
+    textAlign: "center",
   },
   formContainer: {
     marginTop: Spacing.xl,
