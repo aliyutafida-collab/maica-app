@@ -1,0 +1,169 @@
+TASK: Rebuild a clean **MaiCa** mobile app project (Expo React Native) from the uploaded zip at:
+file:///mnt/data/MaiCaAPI.zip
+
+GOAL:
+- Produce a production-ready **mobile app (Android + iOS)** using **Expo (managed workflow)** named "MaiCa".
+- Keep the UI/UX, branding, features and data model from the uploaded project where appropriate, but convert to a mobile-first structure.
+- Provide a working skeleton with implemented core flows (auth, product/sales/expense screens, reports, basic tax calc, subscription hooks, language support, logo + color theme).
+- Provide secure serverless endpoints (small Node/Express functions) for payment secret handling and AI proxy (so API keys are never embedded in the client).
+- Prepare Expo build config and instructions to produce Android and iOS builds (EAS).
+
+STEPS (do these in order):
+
+1) EXTRACT ZIP
+- Extract `/mnt/data/MaiCaAPI.zip` into a new workspace folder `/home/runner/maica-app` (or root).
+- If the zip contains `client`, `server`, `shared` etc: preserve those code files but DO NOT run the web build. We will create a mobile project and migrate needed logic.
+
+2) CREATE NEW EXPO APP (mobile)
+- Create a fresh Expo managed app in `/home/runner/maica-app/mobile`:
+  `npx create-expo-app@latest mobile --template blank`
+- Set package name to `com.zanik.maica` (adjust if needed).
+- Install core mobile dependencies:
+cd mobile
+npx expo install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context @react-native-async-storage/async-storage expo-app-loading
+npm install axios expo-localization i18n-js dayjs
+npm install react-navigation @react-navigation/native @react-navigation/native-stack
+
+swift
+Copy code
+- Install UI & form libs:
+`npm install react-native-paper react-hook-form zod @hookform/resolvers`
+
+3) MIGRATE SHARED SCHEMAS & TYPES
+- Copy any shared `types` and `zod` schemas from the extracted zip (e.g. `client/src/types/schemas.ts`) into `mobile/src/lib/schema.types.ts`. Ensure `insertProductSchema`, `insertSaleSchema`, `insertExpenseSchema` and their inferred types are present in this mobile copy. (If missing, create small Zod versions that match current data model).
+
+4) APP STRUCTURE (create folders)
+mobile/src/
+assets/ # logos, icons, fonts
+components/ # reusable UI components (buttons, cards)
+screens/ # Login, Register, Dashboard, Products, Sales, Expenses, Reports, Settings
+navigation/ # App navigator
+services/ # api client, auth, payments, analytics
+lib/
+schema.types.ts
+tax.ts # tax calculation helpers
+i18n.ts # language support & translations
+hooks/
+contexts/
+utils/
+
+markdown
+Copy code
+
+5) BRAND + THEME
+- Create `mobile/src/theme.ts` using navy + teal palette:
+primary: "#052F5F" // deep navy
+accent: "#0FB1B7" // teal/cyan
+surface: "#FFFFFF"
+text: "#0B2545"
+success: "#2E7D32"
+
+markdown
+Copy code
+- Replace all app green color tokens with the new navy/teal theme.
+- Add logo placeholder at `mobile/assets/logo.png` (use uploaded logo if present or add a placeholder).
+
+6) AUTH
+- Implement client-side flows for email/password auth using **Firebase Auth** (recommended for speed).
+- Add `mobile/src/services/firebase.ts` with initialization (placeholder for `FIREBASE_API_KEY`, etc).
+- Implement `LoginScreen`, `RegisterScreen`, `AuthContext` and token storage using AsyncStorage.
+- NOTE: keep keys out of repo; set them in Replit secrets or Expo secrets.
+
+7) DATABASE & STORAGE
+- Use **Firebase Firestore** for records (simple and fast for mobile) OR Supabase if you prefer SQL.
+- Implement `services/db.ts` wrapper for CRUD: products, sales, expenses, users.
+- Implement offline sync using AsyncStorage + background sync strategy (basic).
+
+8) PAYMENTS & SUBSCRIPTIONS
+- Add client-side integration points and server proxies:
+- Client hooks: `usePayments.ts` with functions `createFlutterwaveCheckout(payload)` and `createPaystackCheckout(payload)` that call serverless endpoints.
+- Server endpoints (see step 10) will generate transaction references and call provider APIs. Client should open webview/checkout or use native SDK if later.
+- Add subscription flow screen with basic subscription tiers and button to start checkout.
+
+9) TAX CALCULATIONS & REPORTS
+- Implement `mobile/src/lib/tax.ts` with configurable tax rate (e.g., 7.5% default) and functions:
+- `calcTax(amount, taxRate, isInclusive)`
+- `calcTotal(amount, taxRate, discount)`
+- Implement a simple `ReportsScreen` that queries sales/expenses from DB and renders totals, tax totals, and export CSV option.
+
+10) AI ADVISOR (placeholder + secure proxy)
+- Create serverless endpoint `/api/ai-advice` that accepts sanitized prompts and returns results from OpenAI via server-side key.
+- Client `services/ai.ts` will call `/api/ai-advice` to get business suggestions, sales insights, and report analysis.
+- IMPORTANT: Do not put OpenAI keys in the mobile client.
+
+11) TRANSLATIONS (multi-language)
+- Add `mobile/src/i18n.ts` using `i18n-js` and `expo-localization`. Include default translations for English + one other language (e.g., Hausa or Yoruba) if translation files exist in the zip.
+- Wrap UI text in keys and provide `Settings` option to switch language.
+
+12) LOGO + ASSETS
+- Replace existing logo references with `assets/logo.png`. Ensure splash & app icons updated:
+- Update `app.json` / `app.config.js` to reference `/assets/logo.png` for splash and icon (both light/dark variants).
+
+13) OFFLINE SUPPORT
+- Use AsyncStorage to cache latest products/sales/expenses and display cached data when offline. Indicate sync status in UI.
+
+14) ANALYTICS & ERROR REPORTING (optional)
+- Add optional Sentry/Expo Analytics placeholders.
+
+15) BUILD CONFIG (Expo + EAS)
+- Create `app.json` with proper `expo` metadata (name "MaiCa", slug `maica-app`, icon path, splash).
+- Add `eas.json` with build profiles for `production` (android & ios).
+- Add instructions file `/home/runner/maica-app/BUILD_INSTRUCTIONS.md` describing:
+- `npm run start` to run dev
+- `expo start` for dev
+- `eas build -p android --profile production` to create Android
+- `eas submit` instructions for publishing
+
+16) SERVER PROXY (simple secure functions)
+- Create a small `serverless/` folder with 2 express endpoints (these run in Replit or server of choice):
+- `/api/payments/create` — server-side logic to create payment reference for Flutterwave/Paystack
+- `/api/ai-advice` — proxy to OpenAI (validate prompt, call OpenAI server-side)
+- Provide Dockerfile or instructions to run this as a lightweight Node server in Replit or a cloud function (keep keys in environment secrets).
+
+17) ENV VARIABLES / SECRETS
+- Create `.env.example` listing required env vars:
+- `FIREBASE_API_KEY` `FIREBASE_AUTH_DOMAIN` `FIREBASE_PROJECT_ID`
+- `OPENAI_API_KEY` `PAYSTACK_SECRET` `FLUTTERWAVE_SECRET`
+- `SUPABASE_URL` `SUPABASE_KEY` (if used)
+- Add guidance to store secrets in Replit/Expo/EAS secrets not in repo.
+
+18) MIGRATE EXISTING LOGIC
+- Migrate existing validation logic and business rules from the uploaded zip (if present) into `schema.types.ts` and `tax.ts`.
+- Ensure UI forms use the migrated Zod schemas.
+
+19) TESTS & LINT
+- Add basic `eslint` and `prettier` configs for the mobile app, and minimal unit tests for `tax.ts` and validation.
+
+20) PACKAGE + EXPORT
+- After successful setup, produce a packaged export (zip) of the new `mobile/` folder (the built mobile project), named `/home/runner/maica-app/maica-mobile-export.zip`.
+- Also produce `maica-serverless-export.zip` containing serverless endpoints and `BUILD_INSTRUCTIONS.md`.
+
+21) VERIFY BUILD (agent should run these commands)
+- `cd mobile && npm install`
+- `npx expo prebuild` (only if native modules added; prefer managed workflow)
+- `expo start --tunnel` (quick local test)
+- `npm run lint` and `npm run test` (if tests added)
+- Create export zips and place them at `/home/runner/maica-app/maica-mobile-export.zip` and `/home/runner/maica-app/maica-serverless-export.zip`
+
+DELIVERABLES:
+1. `/home/runner/maica-app/mobile/` — full Expo React Native app ready for EAS build
+2. `/home/runner/maica-app/BUILD_INSTRUCTIONS.md` — step-by-step developer & deploy instructions
+3. `/home/runner/maica-app/maica-mobile-export.zip` — downloadable zip of the mobile app
+4. `/home/runner/maica-app/maica-serverless-export.zip` — downloadable zip of serverless proxies
+5. A short README describing where to put environment variables and how to run EAS builds.
+
+IMPORTANT NOTES FOR AGENT:
+- Keep all provider API keys out of source; use environment secrets.
+- Use server-side proxy for payments and OpenAI calls.
+- If any ambiguous models or folders exist in the uploaded zip, prefer to **recreate mobile specific implementations** and copy only required schemas/types and brand assets from the zip.
+- Replace all occurrences of “KudiManager” with “MaiCa” in app strings, meta, and display names.
+- Apply navy + teal brand colors across the UI and update splash/icon.
+- Create `ReportsScreen` and `AI Advisor` placeholder UI that calls the serverless endpoints.
+
+EXECUTE NOW:
+- Extract `file:///mnt/data/MaiCaAPI.zip` into `/home/runner/maica-app`
+- Follow the steps above and create the deliverables.
+- When complete, upload the final zips to the workspace and reply with:
+- `/home/runner/maica-app/maica-mobile-export.zip`
+- `/home/runner/maica-app/maica-serverless-export.zip`
+- `/home/runner/maica-app/BUILD_INSTRUCTIONS.md`
