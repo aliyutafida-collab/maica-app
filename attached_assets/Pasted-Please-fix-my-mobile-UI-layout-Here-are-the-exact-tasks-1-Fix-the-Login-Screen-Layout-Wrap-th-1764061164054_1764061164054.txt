@@ -1,0 +1,49 @@
+Please fix my mobile UI layout. Here are the exact tasks:
+	1.	Fix the Login Screen Layout
+	•	Wrap the entire login screen in SafeAreaView.
+	•	Center the MaiCa logo and text properly on all devices (no shifting).
+	•	Ensure all containers use responsive width:
+width: '90%' and alignSelf: 'center'.
+	•	Remove any hard-coded margins or pixel values that break layout on iPhones.
+	2.	General UI Cleanup Across All Screens
+	•	Apply a global uniform padding:
+paddingHorizontal: 16, paddingTop: 20.
+	•	Standardize font sizes and spacing.
+	•	Ensure header titles never overlap or shift.
+	•	Fix the tab bar icons so they are not squeezed or floating.
+	3.	Fix the Products Page
+	•	It currently doesn’t load — please fix the navigation route + component import.
+	•	Make sure “Add Product” opens the correct form.
+	•	Add low stock detection (quantity threshold = 5 by default).
+	4.	Fix Authentication Issues
+	•	Replace all occurrences of placeholders like auth.name with the actual user object.
+	•	Add strong password validation:
+	•	Minimum 8 characters
+	•	Must include a number
+	•	Must include uppercase
+	•	Must include a symbol
+	•	Display meaningful error messages.
+	5.	Fix Multilingual System
+	•	Restore all previous languages (English, French, Hausa, Yoruba, Igbo).
+	•	Make sure switching a language updates:
+	•	Dashboard labels
+	•	Buttons
+	•	Settings
+	•	Subscription pages
+	•	Learning pages
+	•	Fix all translation keys like more.title, dashboard.sales, etc.
+	6.	Add a “Financial Learning” Section
+	•	Re-add the basic financial management learning page we agreed earlier.
+	•	Ensure content is translatable into all languages.
+	7.	Subscription System
+	•	Apply 60-day free trial for new users.
+	•	Add two tiers:
+	•	₦2,500/month – Basic
+	•	₦5,000/month – Premium
+	•	Add Paystack + Flutterwave integration placeholders.
+	8.	Fix the Error Screen
+	•	The “Something went wrong” screen appears randomly.
+Replace incorrect theme/font usage to prevent the crash.
+	9.	Improve Splash + Logo
+	•	Increase MaiCa logo size by 30%.
+	•	Ensure it is centered on all screens and looks crisp.

@@ -68,29 +68,25 @@ export default function MoreScreen() {
   }
 
   function handleLanguageChange() {
-    Alert.alert(
-      t("more.language"),
-      "Select your preferred language",
-      LANGUAGES.map((lang) => ({
-        text: lang.name,
-        onPress: async () => {
-          await setLanguage(lang.code as any);
-        },
-      })).concat([{ text: t("common.cancel"), style: "cancel" }])
-    );
+    const buttons: any[] = LANGUAGES.map((lang) => ({
+      text: lang.name,
+      onPress: async () => {
+        await setLanguage(lang.code as any);
+      },
+    }));
+    buttons.push({ text: t("common.cancel"), style: "cancel" });
+    Alert.alert(t("more.language"), t("more.selectLanguage"), buttons);
   }
 
   function handleThemeChange() {
-    Alert.alert(
-      t("more.theme"),
-      "Select your preferred theme",
-      THEME_MODES.map((mode) => ({
-        text: t(`more.${mode.key}`),
-        onPress: async () => {
-          await setThemeMode(mode.value);
-        },
-      })).concat([{ text: t("common.cancel"), style: "cancel" }])
-    );
+    const buttons: any[] = THEME_MODES.map((mode) => ({
+      text: t(`more.${mode.key}`),
+      onPress: async () => {
+        await setThemeMode(mode.value);
+      },
+    }));
+    buttons.push({ text: t("common.cancel"), style: "cancel" });
+    Alert.alert(t("more.theme"), t("more.selectTheme"), buttons);
   }
 
   async function handleBiometricToggle(value: boolean) {
@@ -310,7 +306,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.h1,
-  },
+  } as any,
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -333,11 +329,11 @@ const styles = StyleSheet.create({
   },
   name: {
     ...Typography.body,
-    fontWeight: "600",
+    fontWeight: "600" as const,
     marginBottom: Spacing.xs,
-  },
+  } as any,
   email: {
-    ...Typography.small,
+    ...Typography.bodyXs,
   },
   section: {
     marginBottom: Spacing.xl,
@@ -364,7 +360,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     ...Typography.body,
-  },
+  } as any,
   menuItemRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -372,5 +368,5 @@ const styles = StyleSheet.create({
   },
   menuItemValue: {
     ...Typography.body,
-  },
+  } as any,
 });

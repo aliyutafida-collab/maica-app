@@ -160,16 +160,19 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingTop: Spacing["3xl"],
+    width: "90%",
+    alignSelf: "center",
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing["2xl"],
+    width: "100%",
   },
   logo: {
-    width: 120,
-    height: 120,
+    width: 156,
+    height: 156,
     marginBottom: Spacing["3xl"],
   },
   title: {
@@ -183,7 +186,8 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     marginTop: Spacing.xl,
-    paddingHorizontal: Spacing.lg,
+    paddingHorizontal: 0,
+    width: "100%",
   },
   linkText: {
     fontSize: Typography.body.fontSize,

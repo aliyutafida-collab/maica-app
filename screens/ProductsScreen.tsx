@@ -21,6 +21,8 @@ import { formatCurrency } from "@/lib/formatters";
 import type { Product } from "@/lib/types";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
+const LOW_STOCK_THRESHOLD = 5;
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function ProductsScreen() {
@@ -82,6 +84,9 @@ export default function ProductsScreen() {
   }
 
   function renderProduct({ item }: { item: Product }) {
+    const isLowStock = (item.stock ?? 0) <= LOW_STOCK_THRESHOLD;
+    const stockCount = item.stock ?? 0;
+    
     return (
       <Pressable
         onPress={() => handleEditProduct(item.id)}
@@ -90,7 +95,8 @@ export default function ProductsScreen() {
           styles.productCard,
           {
             backgroundColor: theme.surface,
-            borderColor: theme.border,
+            borderColor: isLowStock ? theme.warning : theme.border,
+            borderWidth: isLowStock ? 2 : 1,
             opacity: pressed ? 0.8 : 1,
           },
         ]}
@@ -107,9 +113,14 @@ export default function ProductsScreen() {
           <ThemedText style={[styles.price, { color: theme.primary }]}>
             {formatCurrency(item.price)}
           </ThemedText>
-          <ThemedText style={[styles.stock, { color: theme.textSecondary }]}>
-            Stock: {item.stock}
-          </ThemedText>
+          <View style={styles.stockRow}>
+            {isLowStock ? (
+              <Feather name="alert-triangle" size={14} color={theme.warning} style={{ marginRight: 4 }} />
+            ) : null}
+            <ThemedText style={[styles.stock, { color: isLowStock ? theme.warning : theme.textSecondary }]}>
+              Stock: {stockCount}
+            </ThemedText>
+          </View>
         </View>
       </Pressable>
     );
@@ -178,22 +189,26 @@ const styles = StyleSheet.create({
   productInfo: {
     flex: 1,
   },
-  productName: ({
+  productName: {
     ...Typography.body,
-    fontWeight: 600,
+    fontWeight: "600" as const,
     marginBottom: Spacing.xs,
-  } as any),
+  },
   category: {
     ...Typography.bodyXs,
   },
   productMeta: {
     alignItems: "flex-end",
   },
-  price: ({
+  stockRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  price: {
     ...Typography.body,
-    fontWeight: 600,
+    fontWeight: "600" as const,
     marginBottom: Spacing.xs,
-  } as any),
+  },
   stock: {
     ...Typography.caption,
   },

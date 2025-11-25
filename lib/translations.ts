@@ -103,6 +103,9 @@ export const translations = {
       financial: 'Financial Learning',
       preferences: 'Preferences',
       account: 'Account',
+      language: 'Language',
+      selectLanguage: 'Select your preferred language',
+      selectTheme: 'Select your preferred theme',
     },
     learning: {
       title: 'Financial Learning',
@@ -237,6 +240,9 @@ export const translations = {
       financial: 'Formation Financière',
       preferences: 'Préférences',
       account: 'Compte',
+      language: 'Langue',
+      selectLanguage: 'Sélectionnez votre langue préférée',
+      selectTheme: 'Sélectionnez votre thème préféré',
     },
   },
   ha: {
@@ -343,6 +349,9 @@ export const translations = {
       financial: 'Karatun Kasua',
       preferences: 'Abubuwan Zaɓi',
       account: 'Akaụntụ',
+      language: 'Harshe',
+      selectLanguage: 'Zaɓi harshen da kake so',
+      selectTheme: 'Zaɓi siffar da kake so',
     },
   },
   yo: {
@@ -449,6 +458,9 @@ export const translations = {
       financial: 'Ikawe Owó',
       preferences: 'Àwọn Ayọkayọ',
       account: 'Àkaụntụ',
+      language: 'Èdè',
+      selectLanguage: 'Yan èdè tí o fẹ́ràn',
+      selectTheme: 'Yan ìràwọ̀ tí o fẹ́ràn',
     },
   },
   ig: {
@@ -555,6 +567,9 @@ export const translations = {
       financial: 'Igiliti Ego',
       preferences: 'Ihe Ọkọ',
       account: 'Akaụntụ',
+      language: 'Asụsụ',
+      selectLanguage: 'Họrọ asụsụ ị chọrọ',
+      selectTheme: 'Họrọ ụkọ ị chọrọ',
     },
   },
 };

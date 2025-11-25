@@ -148,16 +148,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: Spacing["3xl"],
+    width: "90%",
+    alignSelf: "center",
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.lg,
+    width: "100%",
   },
   logo: {
-    width: 360,
-    height: 144,
+    width: 156,
+    height: 156,
     marginBottom: Spacing["2xl"],
   },
   title: {
@@ -167,14 +170,15 @@ const styles = StyleSheet.create({
   subtitle: {
     ...Typography.body,
     marginBottom: Spacing.xl,
-    textAlign: "center",
-  },
+    textAlign: "center" as const,
+  } as any,
   formContainer: {
     marginTop: Spacing.xl,
+    width: "100%",
   },
   linkText: {
     ...Typography.body,
-    textAlign: "center",
+    textAlign: "center" as const,
     marginTop: Spacing.xl,
-  },
+  } as any,
 });
