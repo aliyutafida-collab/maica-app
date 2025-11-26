@@ -39,7 +39,7 @@ export function TextInput({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={theme.textSecondary}
+          placeholderTextColor="#555"
           secureTextEntry={secureTextEntry && !showPassword}
           keyboardType={keyboardType}
           multiline={multiline}
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: Spacing.md,
     top: "50%",
-    marginTop: -20,
+    transform: [{ translateY: -20 }],
     justifyContent: "center",
     alignItems: "center",
     width: 40,

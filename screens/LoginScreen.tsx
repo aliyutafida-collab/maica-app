@@ -154,26 +154,25 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.lg,
+    paddingVertical: Spacing.lg,
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
-    paddingVertical: Spacing.xl,
   },
   logo: {
     width: 220,
     height: 220,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
     opacity: 1,
   },
   subtitle: {
     textAlign: "center" as const,
+    marginTop: Spacing.sm,
   },
   formContainer: {
-    marginTop: Spacing.xl,
     gap: Spacing.md,
+    width: "100%",
   },
   linkText: {
     textAlign: "center" as const,
