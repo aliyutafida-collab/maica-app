@@ -80,8 +80,8 @@ export default function RegisterScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <ThemedText type="body" style={styles.subtitle}>
-              {t("auth.tagline")}
+            <ThemedText style={styles.subtitle}>
+              Business Management Made Simple
             </ThemedText>
           </View>
 
@@ -131,7 +131,7 @@ export default function RegisterScreen() {
               onPress={() => navigation.navigate("Login")}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
-              <ThemedText type="body" style={styles.linkText}>
+              <ThemedText style={styles.linkText}>
                 {t("auth.alreadyHaveAccount")}
               </ThemedText>
             </Pressable>
@@ -145,34 +145,39 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: "#FFFFFF",
   },
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: Spacing["3xl"],
+    marginBottom: 48,
   },
   logo: {
     width: 220,
     height: 220,
-    marginBottom: Spacing.lg,
+    marginBottom: 16,
     opacity: 1,
   },
   subtitle: {
     textAlign: "center" as const,
-    marginTop: Spacing.sm,
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: "600" as const,
+    color: "#333333",
   },
   formContainer: {
-    gap: Spacing.md,
+    gap: 16,
     width: "100%",
   },
   linkText: {
     textAlign: "center" as const,
-    marginTop: Spacing.lg,
+    marginTop: 24,
+    fontSize: 14,
+    color: "#003366",
   },
 });

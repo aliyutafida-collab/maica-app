@@ -84,8 +84,8 @@ export default function LoginScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
-            <ThemedText type="body" style={styles.subtitle}>
-              {t("auth.tagline")}
+            <ThemedText style={styles.subtitle}>
+              Business Management Made Simple
             </ThemedText>
           </View>
 
@@ -123,7 +123,7 @@ export default function LoginScreen() {
                   { opacity: pressed ? 0.7 : 1 },
                 ]}
               >
-                <Feather name="unlock" size={18} color={Colors.primary} />
+                <Feather name="unlock" size={18} color="#003366" />
                 <ThemedText style={styles.biometricText}>
                   {t("auth.useBiometric")}
                 </ThemedText>
@@ -134,7 +134,7 @@ export default function LoginScreen() {
               onPress={() => navigation.navigate("Register")}
               style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
             >
-              <ThemedText type="body" style={styles.linkText}>
+              <ThemedText style={styles.linkText}>
                 {t("auth.noAccount")}
               </ThemedText>
             </Pressable>
@@ -148,48 +148,55 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
-    backgroundColor: Colors.white,
+    backgroundColor: "#FFFFFF",
   },
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.lg,
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: Spacing["3xl"],
+    marginBottom: 48,
   },
   logo: {
     width: 220,
     height: 220,
-    marginBottom: Spacing.lg,
+    marginBottom: 16,
     opacity: 1,
   },
   subtitle: {
     textAlign: "center" as const,
-    marginTop: Spacing.sm,
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: "600" as const,
+    color: "#333333",
   },
   formContainer: {
-    gap: Spacing.md,
+    gap: 16,
     width: "100%",
   },
   linkText: {
     textAlign: "center" as const,
-    marginTop: Spacing.xl,
+    marginTop: 24,
+    fontSize: 14,
+    color: "#003366",
   },
   biometricButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: Spacing.buttonHeight,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: Colors.primary,
-    marginTop: Spacing.md,
-    backgroundColor: Colors.gray50,
+    height: 50,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#003366",
+    marginTop: 16,
+    backgroundColor: "#F5F5F5",
   },
   biometricText: {
-    marginLeft: Spacing.sm,
+    marginLeft: 8,
+    fontSize: 14,
+    color: "#003366",
   },
 });

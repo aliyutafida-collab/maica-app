@@ -1,7 +1,5 @@
 import { Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { ThemedText } from "./ThemedText";
-import { useTheme } from "@/hooks/useTheme";
-import { Typography, Spacing, BorderRadius } from "@/constants/theme";
 
 interface PrimaryButtonProps {
   title: string;
@@ -16,8 +14,6 @@ export function PrimaryButton({
   loading,
   disabled,
 }: PrimaryButtonProps) {
-  const { theme } = useTheme();
-
   return (
     <Pressable
       onPress={onPress}
@@ -25,7 +21,6 @@ export function PrimaryButton({
       style={({ pressed }) => [
         styles.button,
         {
-          backgroundColor: theme.primary,
           opacity: pressed ? 0.8 : disabled || loading ? 0.5 : 1,
         },
       ]}
@@ -33,7 +28,7 @@ export function PrimaryButton({
       {loading ? (
         <ActivityIndicator color="#FFFFFF" />
       ) : (
-        <ThemedText style={[styles.text, { color: theme.buttonText }]}>
+        <ThemedText style={styles.text}>
           {title}
         </ThemedText>
       )}
@@ -43,15 +38,16 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.sm,
+    height: 50,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: 16,
     width: "100%",
+    backgroundColor: "#003366",
   },
   text: {
-    fontSize: Typography.button.fontSize,
+    fontSize: 16,
     fontWeight: "600" as const,
     color: "#FFFFFF",
   },
