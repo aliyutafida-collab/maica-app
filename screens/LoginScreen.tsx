@@ -159,21 +159,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingTop: Spacing["3xl"],
-    width: "90%",
-    alignSelf: "center",
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing["2xl"],
+    paddingBottom: Spacing["2xl"],
+    width: "100%",
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing["2xl"],
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xl,
     width: "100%",
   },
   logo: {
-    width: 156,
-    height: 156,
-    marginBottom: Spacing["3xl"],
+    width: 180,
+    height: 180,
+    marginBottom: Spacing["2xl"],
   },
   title: {
     fontSize: Typography.h1.fontSize,
@@ -183,10 +184,11 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: Typography.body.fontSize,
     fontWeight: "400" as const,
+    textAlign: "center" as const,
   },
   formContainer: {
     marginTop: Spacing.xl,
-    paddingHorizontal: 0,
+    paddingHorizontal: Spacing.md,
     width: "100%",
   },
   linkText: {

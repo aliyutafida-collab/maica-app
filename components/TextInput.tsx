@@ -82,8 +82,8 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   label: {
-    ...Typography.small,
-    fontWeight: "600",
+    fontSize: Typography.bodyXs.fontSize,
+    fontWeight: "600" as const,
     marginBottom: Spacing.sm,
   },
   inputWrapper: {

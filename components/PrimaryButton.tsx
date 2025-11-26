@@ -50,6 +50,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xl,
   },
   text: {
-    ...Typography.button,
+    fontSize: Typography.button.fontSize,
+    fontWeight: "600" as const,
+    color: "#FFFFFF",
   },
 });
