@@ -190,12 +190,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productName: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: "600" as const,
     marginBottom: Spacing.xs,
   },
   category: {
-    ...Typography.bodyXs,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
   },
   productMeta: {
     alignItems: "flex-end",
@@ -205,19 +205,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   price: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: "600" as const,
     marginBottom: Spacing.xs,
   },
   stock: {
-    ...Typography.caption,
+    fontSize: 12, fontWeight: '500' as const, lineHeight: 16,
   },
   empty: {
     alignItems: "center",
     paddingVertical: Spacing["3xl"],
   },
   emptyText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     marginTop: Spacing.lg,
   },
   fab: {

@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    ...Typography.h1,
+    fontSize: 32, fontWeight: '700' as const, lineHeight: 40,
   },
   buttons: {
     gap: Spacing.md,

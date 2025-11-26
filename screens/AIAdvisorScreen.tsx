@@ -184,7 +184,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E5E7EB",
   },
   headerTitle: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: "600",
   },
   messagesList: {
@@ -201,19 +201,19 @@ const styles = StyleSheet.create({
   userBubble: {},
   aiBubble: {},
   messageText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
   emptyState: {
     alignItems: "center",
     paddingVertical: Spacing["3xl"],
   },
   emptyTitle: {
-    ...Typography.h2,
+    fontSize: 28, fontWeight: '700' as const, lineHeight: 36,
     marginTop: Spacing.lg,
     marginBottom: Spacing.sm,
   },
   emptySubtitle: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     textAlign: "center",
     marginBottom: Spacing.xl,
   },
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xl,
   },
   suggestedTitle: {
-    ...Typography.small,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
     fontWeight: "600",
     marginBottom: Spacing.md,
   },
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   suggestedText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
   suggestedChipsRow: {
     flexDirection: "row",
@@ -249,6 +249,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
   },
   chipText: {
-    ...Typography.small,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
   },
 });

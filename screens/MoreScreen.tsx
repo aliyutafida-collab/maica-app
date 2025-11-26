@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    ...Typography.h1,
+    fontSize: 32, fontWeight: '700' as const, lineHeight: 40,
   } as any,
   profileCard: {
     flexDirection: "row",
@@ -328,18 +328,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: "600" as const,
     marginBottom: Spacing.xs,
   } as any,
   email: {
-    ...Typography.bodyXs,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
   },
   section: {
     marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    ...Typography.caption,
+    fontSize: 12, fontWeight: '500' as const, lineHeight: 16,
     textTransform: "uppercase",
     fontWeight: "600",
     marginBottom: Spacing.md,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   menuItemText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   } as any,
   menuItemRight: {
     flexDirection: "row",
@@ -367,6 +367,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   menuItemValue: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   } as any,
 });

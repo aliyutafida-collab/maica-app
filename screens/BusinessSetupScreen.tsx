@@ -292,12 +292,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    ...Typography.h2,
+    fontSize: 28, fontWeight: '700' as const, lineHeight: 36,
     marginBottom: Spacing.sm,
     textAlign: 'center',
   },
   subtitle: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
   stepContainer: {
     marginBottom: Spacing['2xl'],
@@ -307,12 +307,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   stepTitle: {
-    ...Typography.h3,
+    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
     marginBottom: Spacing.xl,
     textAlign: 'center',
   },
   input: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   categoryText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: '600',
   },
   buttonContainer: {
@@ -356,7 +356,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   buttonText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -365,6 +365,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   backButtonText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
 });

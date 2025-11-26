@@ -242,10 +242,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    ...Typography.h1,
+    fontSize: 32, fontWeight: '700' as const, lineHeight: 40,
   },
   warning: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     textAlign: "center",
     marginTop: Spacing.xl,
   },
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   label: {
-    ...Typography.small,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
     fontWeight: "600",
     marginBottom: Spacing.sm,
   },
@@ -274,17 +274,17 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   totalLabel: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
   totalValue: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
   finalLabel: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: "600",
   },
   finalValue: {
-    ...Typography.h3,
+    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
     fontWeight: "700",
   },
   divider: {

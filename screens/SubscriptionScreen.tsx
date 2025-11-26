@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.lg,
   },
   headerTitle: {
-    ...Typography.h3,
+    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
   },
   content: {
     padding: Spacing.lg,
@@ -222,15 +222,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   trialText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: '600',
     marginBottom: Spacing.xs,
   },
   trialSubtext: {
-    ...Typography.bodySm,
+    fontSize: 14, fontWeight: '400' as const, lineHeight: 20,
   },
   sectionTitle: {
-    ...Typography.h3,
+    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
     marginBottom: Spacing.lg,
   },
   planCard: {
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.sm,
   },
   popularText: {
-    ...Typography.bodyXs,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
     color: '#FFFFFF',
     fontWeight: '700',
   },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   planName: {
-    ...Typography.h3,
+    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
     marginBottom: Spacing.xs,
   },
   priceRow: {
@@ -269,10 +269,10 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
   },
   planPrice: {
-    ...Typography.h2,
+    fontSize: 28, fontWeight: '700' as const, lineHeight: 36,
   },
   planPeriod: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     marginLeft: Spacing.xs,
   },
   features: {
@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   featureText: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   },
   currentBadge: {
     paddingHorizontal: Spacing.md,
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   currentText: {
-    ...Typography.bodySm,
+    fontSize: 14, fontWeight: '400' as const, lineHeight: 20,
     color: '#FFFFFF',
     fontWeight: '700',
   },
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
   },
   testModeText: {
-    ...Typography.bodySm,
+    fontSize: 14, fontWeight: '400' as const, lineHeight: 20,
     flex: 1,
   },
 });

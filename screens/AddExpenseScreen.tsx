@@ -137,13 +137,13 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    ...Typography.h1,
+    fontSize: 32, fontWeight: '700' as const, lineHeight: 40,
   },
   inputContainer: {
     marginBottom: Spacing.lg,
   },
   label: {
-    ...Typography.small,
+    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
     fontWeight: "600",
     marginBottom: Spacing.sm,
   },

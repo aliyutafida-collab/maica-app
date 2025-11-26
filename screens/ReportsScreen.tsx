@@ -141,11 +141,11 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    ...Typography.h1,
+    fontSize: 32, fontWeight: '700' as const, lineHeight: 40,
     marginBottom: Spacing.xs,
   } as any,
   subtitle: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   } as any,
   card: {
     borderRadius: BorderRadius.sm,
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   cardTitle: {
-    ...Typography.h3,
+    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
     marginBottom: Spacing.lg,
   } as any,
   row: {
@@ -164,10 +164,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
   },
   label: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
   } as any,
   value: {
-    ...Typography.body,
+    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
     fontWeight: 600 as any,
   },
   divider: {
