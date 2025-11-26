@@ -1,12 +1,10 @@
 import { API_URL } from '../config';
 
 export interface AuthResponse {
+  id: string;
+  name: string;
+  email: string;
   token: string;
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
 }
 
 export async function register(

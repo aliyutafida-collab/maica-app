@@ -67,14 +67,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function register(name: string, email: string, password: string) {
     try {
       const response = await authService.register(name, email, password);
+      if (!response?.id || !response?.token) {
+        throw new Error("Invalid auth response from server");
+      }
       const userData: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+        id: response.id,
+        email: response.email || email,
+        name: response.name || name,
         createdAt: new Date().toISOString(),
       };
       await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
-      await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      if (response.token) {
+        await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      }
       setUser(userData);
       setToken(response.token);
       setSetupComplete(false);
@@ -86,14 +91,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function login(email: string, password: string) {
     try {
       const response = await authService.login(email, password);
+      if (!response?.id || !response?.token) {
+        throw new Error("Invalid credentials or server error");
+      }
       const userData: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+        id: response.id,
+        email: response.email || email,
+        name: response.name || email.split('@')[0],
         createdAt: new Date().toISOString(),
       };
       await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
-      await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      if (response.token) {
+        await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      }
       setUser(userData);
       setToken(response.token);
       

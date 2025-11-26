@@ -41,7 +41,18 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    res.json({ ok: true, userId });
+    const token = require('jsonwebtoken').sign(
+      { userId, email },
+      process.env.JWT_SECRET || 'maica_secret_key',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      id: userId,
+      name: `${firstName || ''} ${lastName || ''}`.trim() || email.split('@')[0],
+      email,
+      token
+    });
   } catch (error) {
     console.error('Register error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -60,10 +71,17 @@ router.post('/login', async (req, res) => {
 
     if (error) return res.status(401).json({ error: error.message });
 
+    const token = require('jsonwebtoken').sign(
+      { userId: data.user.id, email: data.user.email },
+      process.env.JWT_SECRET || 'maica_secret_key',
+      { expiresIn: '7d' }
+    );
+
     res.json({
-      ok: true,
-      user: data.user,
-      session: data.session
+      id: data.user.id,
+      name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+      email: data.user.email,
+      token
     });
   } catch (error) {
     console.error('Login error:', error);

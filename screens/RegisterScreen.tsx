@@ -159,9 +159,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.lg,
   },
   logo: {
-    width: 200,
-    height: 200,
+    width: 220,
+    height: 220,
     marginBottom: Spacing.lg,
+    opacity: 1,
   },
   subtitle: {
     textAlign: "center" as const,
