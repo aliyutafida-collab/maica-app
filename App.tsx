@@ -12,6 +12,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { ProductsProvider } from "@/contexts/ProductsContext";
+import { SalesProvider } from "@/contexts/SalesContext";
+import { ExpensesProvider } from "@/contexts/ExpensesContext";
 
 function AppContent() {
   const { navigationTheme, isDark } = useTheme();
@@ -36,7 +39,13 @@ export default function App() {
               <LanguageProvider>
                 <AuthProvider>
                   <SubscriptionProvider>
-                    <AppContent />
+                    <ProductsProvider>
+                      <SalesProvider>
+                        <ExpensesProvider>
+                          <AppContent />
+                        </ExpensesProvider>
+                      </SalesProvider>
+                    </ProductsProvider>
                   </SubscriptionProvider>
                 </AuthProvider>
               </LanguageProvider>

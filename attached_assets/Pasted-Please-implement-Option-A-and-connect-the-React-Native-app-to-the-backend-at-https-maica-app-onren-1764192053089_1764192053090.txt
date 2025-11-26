@@ -1,0 +1,131 @@
+Please implement Option A and connect the React Native app to the backend at https://maica-app.onrender.com
+.
+
+Create API service files:
+
+src/services/authService.js
+
+src/services/productsService.js
+
+src/services/salesService.js
+
+src/services/expensesService.js
+
+Each service should export CRUD functions (e.g. login, register, getProducts, createProduct, updateProduct, deleteProduct, createSale, etc.) using fetch to call the backend at API_URL. Use process.env.API_URL for the base URL or a single src/config/index.js that exports API_URL = 'https://maica-app.onrender.com'.
+
+Update app contexts (replace AsyncStorage-only flows):
+
+Update src/contexts/AuthContext, ProductsContext, SalesContext, ExpensesContext (or similarly named) to call the new service functions instead of storing/fetching everything directly in AsyncStorage.
+
+Keep AsyncStorage as a local cache only: write-through cache when online.
+
+Behaviour details:
+
+On app start, attempt to GET necessary lists from backend. If offline/fails, fall back to AsyncStorage.
+
+On write actions (create/update/delete), call backend, update local state and update AsyncStorage cache.
+
+Handle API errors and surface friendly messages.
+
+Add a single central src/config/index.js:
+
+export const API_URL = 'https://maica-app.onrender.com';
+
+
+Use that in the service files.
+
+Tests & PR:
+
+Commit changes to a new branch feature/connect-backend.
+
+Create a PR with summary of changes, list of modified files, and a short QA checklist:
+
+ Login works against backend
+
+ Create product persists backend and shows in app
+
+ Create sale persists backend
+
+ App falls back to AsyncStorage when backend unreachable
+
+Notes for endpoints:
+
+Use REST endpoints that match the backend structure (/auth/login, /products, /sales, /expenses). If any endpoint names differ, check backend routes and adapt.
+
+Use JSON Content-Type: application/json and include any required auth token in Authorization: Bearer <token> after login.
+
+Deliverables:
+
+Push branch and open PR.
+
+Provide short README notes describing how the app is now wired to the backend and any env vars to set.
+
+Proceed and implement all code changes, push to feature/connect-backend, and open a pull request. ``
+
+Example code the agent should add (you can show this to the agent too)
+src/config/index.js
+export const API_URL = 'https://maica-app.onrender.com';
+
+src/services/authService.js
+import { API_URL } from '../config';
+
+export async function login(email, password) {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  if (!res.ok) throw new Error('Login failed');
+  return res.json(); // { token, user }
+}
+
+export async function register(payload) {
+  const res = await fetch(`${API_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error('Register failed');
+  return res.json();
+}
+
+src/services/productsService.js
+import { API_URL } from '../config';
+
+export async function getProducts(token) {
+  const res = await fetch(`${API_URL}/products`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  if (!res.ok) throw new Error('Failed to fetch products');
+  return res.json();
+}
+
+export async function createProduct(token, data) {
+  const res = await fetch(`${API_URL}/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('Create product failed');
+  return res.json();
+}
+
+Example context change (pseudo)
+
+Replace local-only code like:
+
+await AsyncStorage.setItem('products', JSON.stringify(products));
+
+
+with:
+
+try {
+  const created = await createProduct(token, newProduct);
+  setProducts(prev => [created, ...prev]);
+  await AsyncStorage.setItem('products', JSON.stringify([...updatedList]));
+} catch(e) {
+  // fallback: save locally and flag as pending sync
+}

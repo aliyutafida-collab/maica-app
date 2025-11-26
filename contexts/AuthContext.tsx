@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { User } from "@/lib/types";
+import * as authService from "@/src/services/authService";
 import {
   authenticateWithBiometric,
   isBiometricEnabled,
@@ -12,6 +13,7 @@ import {
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   isLoading: boolean;
   setupComplete: boolean;
   biometricAvailable: boolean;
@@ -25,10 +27,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_KEY = "@maica_auth";
-const USERS_KEY = "@maica_users";
+const TOKEN_KEY = "@maica_token";
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [setupComplete, setSetupComplete] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -46,9 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function loadUser() {
     try {
       const userData = await AsyncStorage.getItem(AUTH_KEY);
-      if (userData) {
+      const tokenData = await AsyncStorage.getItem(TOKEN_KEY);
+      if (userData && tokenData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
+        setToken(tokenData);
         const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${parsedUser.id}`);
         setSetupComplete(setupStatus === 'true');
       }
@@ -60,53 +65,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   async function register(name: string, email: string, password: string) {
-    const usersData = await AsyncStorage.getItem(USERS_KEY);
-    const users = usersData ? JSON.parse(usersData) : [];
-
-    const existingUser = users.find((u: any) => u.email === email);
-    if (existingUser) {
-      throw new Error("User with this email already exists");
+    try {
+      const response = await authService.register(name, email, password);
+      const userData: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        createdAt: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
+      await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      setUser(userData);
+      setToken(response.token);
+      setSetupComplete(false);
+    } catch (error) {
+      throw error;
     }
-
-    const newUser: User & { password: string } = {
-      id: Date.now().toString(),
-      email,
-      name,
-      password,
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
-
-    const { password: _, ...userWithoutPassword } = newUser;
-    await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userWithoutPassword));
-    setUser(userWithoutPassword);
-    setSetupComplete(false);
   }
 
   async function login(email: string, password: string) {
-    const usersData = await AsyncStorage.getItem(USERS_KEY);
-    const users = usersData ? JSON.parse(usersData) : [];
+    try {
+      const response = await authService.login(email, password);
+      const userData: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        createdAt: new Date().toISOString(),
+      };
+      await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
+      await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      setUser(userData);
+      setToken(response.token);
+      
+      const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${userData.id}`);
+      setSetupComplete(setupStatus === 'true');
 
-    const foundUser = users.find(
-      (u: any) => u.email === email && u.password === password
-    );
-
-    if (!foundUser) {
-      throw new Error("Invalid email or password");
-    }
-
-    const { password: _, ...userWithoutPassword } = foundUser;
-    await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userWithoutPassword));
-    setUser(userWithoutPassword);
-    
-    const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${userWithoutPassword.id}`);
-    setSetupComplete(setupStatus === 'true');
-
-    const biometricEnabled = await isBiometricEnabled();
-    if (biometricEnabled) {
-      await saveBiometricUser(userWithoutPassword);
+      const biometricEnabled = await isBiometricEnabled();
+      if (biometricEnabled) {
+        await saveBiometricUser(userData);
+      }
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -115,12 +114,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!enabled) return false;
 
     const userData = await getBiometricUser();
-    if (!userData) return false;
+    const cachedToken = await AsyncStorage.getItem(TOKEN_KEY);
+    if (!userData || !cachedToken) return false;
 
     const authenticated = await authenticateWithBiometric("Unlock MaiCa");
     if (authenticated) {
       await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
       setUser(userData);
+      setToken(cachedToken);
       const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${userData.id}`);
       setSetupComplete(setupStatus === 'true');
       return true;
@@ -131,7 +132,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     await AsyncStorage.removeItem(AUTH_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
     setUser(null);
+    setToken(null);
     setSetupComplete(false);
   }
 
@@ -143,6 +146,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        token,
         isLoading,
         setupComplete,
         biometricAvailable,
