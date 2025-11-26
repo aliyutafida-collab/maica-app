@@ -10,7 +10,37 @@ router.post('/register', async (req, res) => {
   const { email, password, firstName, lastName, products = [] } = req.body;
   
   try {
-    // Create user in Supabase Auth
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain an uppercase letter' });
+    }
+
+    if (!/[a-z]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain a lowercase letter' });
+    }
+
+    if (!/\d/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain a number' });
+    }
+
+    if (!/[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(password)) {
+      return res.status(400).json({ error: 'Password must contain a special character' });
+    }
+
+    // Create user in Supabase Auth (password is automatically hashed by Supabase)
     const { data: userData, error: userError } = await supabase.auth.admin.createUser({
       email,
       password,
@@ -20,6 +50,7 @@ router.post('/register', async (req, res) => {
     if (userError) return res.status(400).json({ error: userError.message });
 
     const userId = userData.user.id;
+    const fullName = `${firstName || ''} ${lastName || ''}`.trim() || email.split('@')[0];
 
     // Store profile details
     await supabase.from('profiles').insert({
@@ -41,21 +72,22 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Generate JWT token (7-day expiry)
     const token = require('jsonwebtoken').sign(
       { userId, email },
       process.env.JWT_SECRET || 'maica_secret_key',
       { expiresIn: '7d' }
     );
 
-    res.json({
+    res.status(201).json({
       id: userId,
-      name: `${firstName || ''} ${lastName || ''}`.trim() || email.split('@')[0],
+      name: fullName,
       email,
       token
     });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error during registration' });
   }
 });
 
@@ -64,13 +96,33 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   
   try {
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    // Sign in with Supabase (compares password automatically)
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
-    if (error) return res.status(401).json({ error: error.message });
+    if (error) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
 
+    // Fetch user profile for full name
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('first_name, last_name')
+      .eq('id', data.user.id)
+      .single();
+
+    const firstName = profile?.first_name || '';
+    const lastName = profile?.last_name || '';
+    const fullName = `${firstName} ${lastName}`.trim() || data.user.email.split('@')[0];
+
+    // Generate JWT token (7-day expiry)
     const token = require('jsonwebtoken').sign(
       { userId: data.user.id, email: data.user.email },
       process.env.JWT_SECRET || 'maica_secret_key',
@@ -79,13 +131,13 @@ router.post('/login', async (req, res) => {
 
     res.json({
       id: data.user.id,
-      name: data.user.user_metadata?.full_name || data.user.email.split('@')[0],
+      name: fullName,
       email: data.user.email,
       token
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
 
