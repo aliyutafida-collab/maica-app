@@ -18,10 +18,18 @@ export async function register(
     body: JSON.stringify({ first_name: name.split(' ')[0], last_name: name.split(' ').slice(1).join(' '), email, password }),
   });
   if (!res.ok) {
-    const error = await res.text();
-    throw new Error(error || 'Registration failed');
+    try {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Registration failed');
+    } catch (e) {
+      throw new Error('Registration failed');
+    }
   }
-  return res.json();
+  const data = await res.json();
+  if (!data.id || !data.token) {
+    throw new Error('Invalid response from server');
+  }
+  return data;
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -31,10 +39,18 @@ export async function login(email: string, password: string): Promise<AuthRespon
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    const error = await res.text();
-    throw new Error(error || 'Login failed');
+    try {
+      const errorData = await res.json();
+      throw new Error(errorData.error || 'Login failed');
+    } catch (e) {
+      throw new Error('Invalid email or password');
+    }
   }
-  return res.json();
+  const data = await res.json();
+  if (!data.id || !data.token) {
+    throw new Error('Invalid response from server');
+  }
+  return data;
 }
 
 export async function forgotPassword(email: string): Promise<{ message: string }> {

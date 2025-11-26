@@ -67,21 +67,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function register(name: string, email: string, password: string) {
     try {
       const response = await authService.register(name, email, password);
-      if (!response?.id || !response?.token) {
-        throw new Error("Invalid auth response from server");
+      const { id, name: responseName, email: responseEmail, token } = response;
+      
+      if (!id || !token) {
+        throw new Error("Authentication failed: invalid server response");
       }
+      
       const userData: User = {
-        id: response.id,
-        email: response.email || email,
-        name: response.name || name,
+        id,
+        email: responseEmail || email,
+        name: responseName || name,
         createdAt: new Date().toISOString(),
       };
+      
       await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
-      if (response.token) {
-        await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      
+      if (token) {
+        await AsyncStorage.setItem(TOKEN_KEY, token);
+      } else {
+        throw new Error("Authentication failed: no token received");
       }
+      
       setUser(userData);
-      setToken(response.token);
+      setToken(token);
       setSetupComplete(false);
     } catch (error) {
       throw error;
@@ -91,21 +99,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function login(email: string, password: string) {
     try {
       const response = await authService.login(email, password);
-      if (!response?.id || !response?.token) {
-        throw new Error("Invalid credentials or server error");
+      const { id, name: responseName, email: responseEmail, token } = response;
+      
+      if (!id || !token) {
+        throw new Error("Authentication failed: invalid server response");
       }
+      
       const userData: User = {
-        id: response.id,
-        email: response.email || email,
-        name: response.name || email.split('@')[0],
+        id,
+        email: responseEmail || email,
+        name: responseName || email.split('@')[0],
         createdAt: new Date().toISOString(),
       };
+      
       await AsyncStorage.setItem(AUTH_KEY, JSON.stringify(userData));
-      if (response.token) {
-        await AsyncStorage.setItem(TOKEN_KEY, response.token);
+      
+      if (token) {
+        await AsyncStorage.setItem(TOKEN_KEY, token);
+      } else {
+        throw new Error("Authentication failed: no token received");
       }
+      
       setUser(userData);
-      setToken(response.token);
+      setToken(token);
       
       const setupStatus = await AsyncStorage.getItem(`@maica_setup_complete_${userData.id}`);
       setSetupComplete(setupStatus === 'true');
