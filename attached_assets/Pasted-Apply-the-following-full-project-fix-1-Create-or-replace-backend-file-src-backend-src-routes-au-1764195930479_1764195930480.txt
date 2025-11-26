@@ -1,0 +1,293 @@
+Apply the following full project fix:
+
+1. Create or replace backend file ./src/backend/src/routes/auth.js with the following:
+
+<<<FILE auth.js
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { createClient } = require('@supabase/supabase-js');
+
+const router = express.Router();
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+const JWT_SECRET = process.env.JWT_SECRET || 'maica_secret_key';
+
+function createToken(payload) {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+}
+
+router.post('/register', async (req, res) => {
+  try {
+    const { fullName, email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
+
+    const { data: existing } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .limit(1);
+
+    if (existing && existing.length) return res.status(409).json({ error: 'User already exists' });
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{ full_name: fullName || null, email, password_hash: hashed }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const token = createToken({ userId: data.id, email });
+    return res.json({ user: { id: data.id, email: data.email, fullName: data.full_name }, token });
+  } catch (e) {
+    return res.status(500).json({ error: 'Registration failed' });
+  }
+});
+
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
+
+    const { data } = await supabase
+      .from('users')
+      .select('id,email,password_hash,full_name')
+      .eq('email', email)
+      .single();
+
+    if (!data) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const match = await bcrypt.compare(password, data.password_hash);
+    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const token = createToken({ userId: data.id, email });
+    return res.json({ user: { id: data.id, email: data.email, fullName: data.full_name }, token });
+  } catch (e) {
+    return res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+module.exports = router;
+FILE>>>
+
+2. Update backend entry file ./src/backend/src/index.js:
+
+<<<FILE index.js
+const express = require('express');
+const bodyParser = require('body-parser');
+const authRoutes = require('./routes/auth');
+
+const app = express();
+app.use(bodyParser.json());
+
+app.use('/api/auth', authRoutes);
+
+app.get('/health', (req, res) => res.json({ ok: true }));
+
+const port = process.env.PORT || 10000;
+app.listen(port, () => console.log(`MAICA backend listening on port ${port}`));
+FILE>>>
+
+3. Create frontend API service ./src/services/api.js:
+
+<<<FILE api.js
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'https://maica-app.onrender.com',
+  timeout: 10000,
+});
+
+export default api;
+FILE>>>
+
+4. Create frontend auth service ./src/services/authService.js:
+
+<<<FILE authService.js
+import api from './api';
+
+export async function register(payload) {
+  const res = await api.post('/api/auth/register', payload);
+  return res.data;
+}
+
+export async function login(payload) {
+  const res = await api.post('/api/auth/login', payload);
+  return res.data;
+}
+FILE>>>
+
+5. Replace AuthContext with safe storage logic ./src/contexts/AuthContext.js:
+
+<<<FILE AuthContext.js
+import React, { createContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as authService from '../services/authService';
+
+export const AuthContext = createContext();
+
+const TOKEN_KEY = '@maica_token';
+const USER_KEY = '@maica_user';
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+
+  async function load() {
+    try {
+      const t = await AsyncStorage.getItem(TOKEN_KEY);
+      const u = await AsyncStorage.getItem(USER_KEY);
+      if (t) setToken(t);
+      if (u) setUser(JSON.parse(u));
+    } catch {}
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function safeSave(key, value) {
+    if (value == null) return AsyncStorage.removeItem(key);
+    return AsyncStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+  }
+
+  async function signUp(fullName, email, password) {
+    const res = await authService.register({ fullName, email, password });
+    setUser(res.user);
+    setToken(res.token);
+    await safeSave(USER_KEY, res.user);
+    await safeSave(TOKEN_KEY, res.token);
+    return res;
+  }
+
+  async function signIn(email, password) {
+    const res = await authService.login({ email, password });
+    setUser(res.user);
+    setToken(res.token);
+    await safeSave(USER_KEY, res.user);
+    await safeSave(TOKEN_KEY, res.token);
+    return res;
+  }
+
+  async function signOut() {
+    setUser(null);
+    setToken(null);
+    await AsyncStorage.removeItem(USER_KEY);
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, token, signUp, signIn, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+FILE>>>
+
+6. Create modern Login screen (white background + large logo) ./src/screens/LoginScreen.js:
+
+<<<FILE LoginScreen.js
+import React, { useContext, useState } from 'react';
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { AuthContext } from '../contexts/AuthContext';
+
+export default function LoginScreen({ navigation }) {
+  const { signIn } = useContext(AuthContext);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  async function onLogin() {
+    try {
+      await signIn(email.trim(), password.trim());
+    } catch (e) {
+      Alert.alert('Login Failed', e.message);
+    }
+  }
+
+  return (
+    <View style={styles.container}>
+      <Image style={styles.logo} source={require('../assets/logo.png')} resizeMode="contain" />
+      <Text style={styles.title}>Business Management Made Simple</Text>
+
+      <TextInput style={styles.input} placeholder="Email" autoCapitalize="none" value={email} onChangeText={setEmail} />
+      <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+
+      <TouchableOpacity style={styles.button} onPress={onLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+        <Text style={styles.link}>Don't have an account? Register</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff', padding: 24, justifyContent: 'center' },
+  logo: { width: 200, height: 200, alignSelf: 'center' },
+  title: { textAlign: 'center', marginBottom: 20, color: '#333' },
+  input: { borderColor: '#ddd', borderWidth: 1, padding: 14, borderRadius: 10, marginBottom: 12 },
+  button: { backgroundColor: '#0B6EF6', padding: 16, borderRadius: 10 },
+  buttonText: { color: '#fff', fontWeight: 'bold', textAlign: 'center' },
+  link: { color: '#0B6EF6', marginTop: 20, textAlign: 'center' }
+});
+FILE>>>
+
+7. Create RegisterScreen with same style ./src/screens/RegisterScreen.js:
+
+<<<FILE RegisterScreen.js
+import React, { useContext, useState } from 'react';
+import { View, Text, Image, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { AuthContext } from '../contexts/AuthContext';
+
+export default function RegisterScreen({ navigation }) {
+  const { signUp } = useContext(AuthContext);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  async function onRegister() {
+    try {
+      await signUp(fullName.trim(), email.trim(), password.trim());
+    } catch (e) {
+      Alert.alert('Registration Failed', e.message);
+    }
+  }
+
+  return (
+    <View style={styles.container}>
+      <Image style={styles.logo} source={require('../assets/logo.png')} resizeMode="contain" />
+      <Text style={styles.title}>Create your account</Text>
+
+      <TextInput style={styles.input} placeholder="Full Name" value={fullName} onChangeText={setFullName} />
+      <TextInput style={styles.input} placeholder="Email" autoCapitalize="none" value={email} onChangeText={setEmail} />
+      <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+
+      <TouchableOpacity style={styles.button} onPress={onRegister}>
+        <Text style={styles.buttonText}>Register</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+        <Text style={styles.link}>Already have an account? Login</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff', padding: 24, justifyContent: 'center' },
+  logo: { width: 200, height: 200, alignSelf: 'center' },
+  title: { textAlign:'center', marginBottom: 20, color:'#333'},
+  input: { borderWidth: 1, borderColor:'#ddd', padding: 14, borderRadius: 10, marginBottom: 12 },
+  button: { backgroundColor:'#0B6EF6', padding: 16, borderRadius: 10 },
+  buttonText: { color:'#fff', textAlign:'center', fontWeight:'bold' },
+  link: { color:'#0B6EF6', marginTop: 20, textAlign:'center' }
+});
+FILE>>>
+
+8. After creating all files, run:
+
+git add -A && git commit -m "fix: full MAICA auth + UI redesign + AsyncStorage + backend integration" && git push origin main
+
+END
