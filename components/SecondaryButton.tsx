@@ -43,8 +43,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Spacing.xl,
+    width: "100%",
   },
   text: {
-    ...Typography.button,
+    fontSize: Typography.button.fontSize,
+    fontWeight: "600" as const,
   },
 });

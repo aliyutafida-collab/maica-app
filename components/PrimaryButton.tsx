@@ -48,6 +48,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: Spacing.xl,
+    width: "100%",
   },
   text: {
     fontSize: Typography.button.fontSize,

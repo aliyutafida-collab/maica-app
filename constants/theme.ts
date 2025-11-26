@@ -15,6 +15,8 @@ export const Colors = {
     error: '#EF4444',
     success: '#10B981',
     warning: '#F59E0B',
+    link: brandAccent,
+    buttonText: '#FFFFFF',
     tabIconDefault: '#94A3B8',
     tabIconSelected: brandAccent,
     tabBackground: '#FFFFFF',
@@ -32,6 +34,8 @@ export const Colors = {
     error: '#EF4444',
     success: '#10B981',
     warning: '#F59E0B',
+    link: brandAccent,
+    buttonText: '#FFFFFF',
     tabIconDefault: '#64748B',
     tabIconSelected: brandAccent,
     tabBackground: '#0F172A',
@@ -64,6 +68,9 @@ export const Spacing = {
   xl: 24,
   '2xl': 32,
   '3xl': 48,
+  '4xl': 64,
+  inputHeight: 48,
+  buttonHeight: 48,
 };
 
 export const BorderRadius = {
@@ -111,6 +118,21 @@ export const Typography = {
     fontSize: 12,
     fontWeight: 400,
     lineHeight: 16,
+  },
+  small: {
+    fontSize: 12,
+    fontWeight: 400,
+    lineHeight: 16,
+  },
+  button: {
+    fontSize: 16,
+    fontWeight: 600,
+    lineHeight: 24,
+  },
+  link: {
+    fontSize: 16,
+    fontWeight: 600,
+    lineHeight: 24,
   },
   label: {
     fontSize: 14,

@@ -80,6 +80,7 @@ export function TextInput({
 const styles = StyleSheet.create({
   container: {
     marginBottom: Spacing.lg,
+    width: "100%",
   },
   label: {
     fontSize: Typography.bodyXs.fontSize,
@@ -88,25 +89,30 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     position: "relative",
+    width: "100%",
   },
   input: {
-    ...Typography.body,
+    fontSize: Typography.body.fontSize,
+    fontWeight: "400" as const,
     height: Spacing.inputHeight,
     borderWidth: 1,
     borderRadius: BorderRadius.xs,
     paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
   },
   eyeIcon: {
     position: "absolute",
     right: Spacing.md,
-    top: Spacing.md,
+    top: "50%",
+    marginTop: -20,
     justifyContent: "center",
     alignItems: "center",
     width: 40,
     height: 40,
   },
   error: {
-    ...Typography.caption,
+    fontSize: Typography.caption.fontSize,
+    fontWeight: "500" as const,
     marginTop: Spacing.xs,
   },
 });
