@@ -37,21 +37,21 @@ export function ThemedText({
   const getTypeStyle = () => {
     switch (type) {
       case "h1":
-        return Typography.h1;
+        return { fontSize: Typography.h1.fontSize, fontWeight: "700" as const, lineHeight: Typography.h1.lineHeight };
       case "h2":
-        return Typography.h2;
+        return { fontSize: Typography.h2.fontSize, fontWeight: "700" as const, lineHeight: Typography.h2.lineHeight };
       case "h3":
-        return Typography.h3;
+        return { fontSize: Typography.h3.fontSize, fontWeight: "700" as const, lineHeight: Typography.h3.lineHeight };
       case "h4":
-        return Typography.h4;
+        return { fontSize: Typography.h4.fontSize, fontWeight: "600" as const, lineHeight: Typography.h4.lineHeight };
       case "body":
-        return Typography.body;
+        return { fontSize: Typography.body.fontSize, fontWeight: "400" as const, lineHeight: Typography.body.lineHeight };
       case "small":
-        return Typography.small;
+        return { fontSize: Typography.small.fontSize, fontWeight: "400" as const, lineHeight: Typography.small.lineHeight };
       case "link":
-        return Typography.link;
+        return { fontSize: Typography.link.fontSize, fontWeight: "600" as const, lineHeight: Typography.link.lineHeight };
       default:
-        return Typography.body;
+        return { fontSize: Typography.body.fontSize, fontWeight: "400" as const, lineHeight: Typography.body.lineHeight };
     }
   };
 

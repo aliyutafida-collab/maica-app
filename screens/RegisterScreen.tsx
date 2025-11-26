@@ -7,9 +7,8 @@ import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareS
 import { TextInput } from "@/components/TextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { Spacing, Typography } from "@/constants/theme";
+import { Spacing, Colors } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -28,7 +27,6 @@ export default function RegisterScreen() {
   }>({});
 
   const { register } = useAuth();
-  const { theme } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
@@ -73,117 +71,107 @@ export default function RegisterScreen() {
   }
 
   return (
-    <ScreenKeyboardAwareScrollView>
-      <View style={styles.container}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("@/assets/images/maica-logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <ThemedText
-            style={[styles.subtitle, { color: theme.textSecondary }]}
-          >
-            {t("auth.tagline")}
-          </ThemedText>
-        </View>
-
-        <View style={styles.formContainer}>
-          <TextInput
-            label={t("auth.fullName")}
-            value={name}
-            onChangeText={setName}
-            placeholder={t("auth.fullName")}
-            error={errors.name}
-          />
-
-          <TextInput
-            label={t("auth.email")}
-            value={email}
-            onChangeText={setEmail}
-            placeholder={t("auth.email")}
-            keyboardType="email-address"
-            error={errors.email}
-          />
-
-          <TextInput
-            label={t("auth.password")}
-            value={password}
-            onChangeText={setPassword}
-            placeholder={t("auth.password")}
-            secureTextEntry
-            error={errors.password}
-          />
-
-          <TextInput
-            label={t("auth.confirmPassword")}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder={t("auth.confirmPassword")}
-            secureTextEntry
-            error={errors.confirmPassword}
-          />
-
-          <PrimaryButton
-            title={t("auth.register")}
-            onPress={handleRegister}
-            loading={loading}
-          />
-
-          <Pressable
-            onPress={() => navigation.navigate("Login")}
-            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-          >
-            <ThemedText style={[styles.linkText, { color: theme.accent }]}>
-              {t("auth.alreadyHaveAccount")}
+    <View style={styles.rootContainer}>
+      <ScreenKeyboardAwareScrollView>
+        <View style={styles.container}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("@/assets/images/maica-logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <ThemedText type="body" style={styles.subtitle}>
+              {t("auth.tagline")}
             </ThemedText>
-          </Pressable>
+          </View>
+
+          <View style={styles.formContainer}>
+            <TextInput
+              label={t("auth.fullName")}
+              value={name}
+              onChangeText={setName}
+              placeholder={t("auth.fullName")}
+              error={errors.name}
+            />
+
+            <TextInput
+              label={t("auth.email")}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={t("auth.email")}
+              keyboardType="email-address"
+              error={errors.email}
+            />
+
+            <TextInput
+              label={t("auth.password")}
+              value={password}
+              onChangeText={setPassword}
+              placeholder={t("auth.password")}
+              secureTextEntry
+              error={errors.password}
+            />
+
+            <TextInput
+              label={t("auth.confirmPassword")}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder={t("auth.confirmPassword")}
+              secureTextEntry
+              error={errors.confirmPassword}
+            />
+
+            <PrimaryButton
+              title={t("auth.register")}
+              onPress={handleRegister}
+              loading={loading}
+            />
+
+            <Pressable
+              onPress={() => navigation.navigate("Login")}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            >
+              <ThemedText type="body" style={styles.linkText}>
+                {t("auth.alreadyHaveAccount")}
+              </ThemedText>
+            </Pressable>
+          </View>
         </View>
-      </View>
-    </ScreenKeyboardAwareScrollView>
+      </ScreenKeyboardAwareScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
   container: {
     flex: 1,
-    paddingTop: Spacing["2xl"],
-    paddingBottom: Spacing["2xl"],
-    paddingHorizontal: Spacing.md,
-    width: "100%",
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["2xl"],
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xl,
-    width: "100%",
+    paddingVertical: Spacing.lg,
   },
   logo: {
-    width: 180,
-    height: 180,
-    marginBottom: Spacing["2xl"],
-  },
-  title: {
-    fontSize: Typography.h1.fontSize,
-    fontWeight: "700" as const,
-    marginBottom: Spacing.sm,
+    width: 200,
+    height: 200,
+    marginBottom: Spacing.lg,
   },
   subtitle: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: "400" as const,
-    marginBottom: Spacing.xl,
     textAlign: "center" as const,
   },
   formContainer: {
-    marginTop: Spacing.xl,
-    paddingHorizontal: Spacing.md,
-    width: "100%",
+    marginTop: Spacing.lg,
+    gap: Spacing.md,
   },
   linkText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: "400" as const,
     textAlign: "center" as const,
-    marginTop: Spacing.xl,
+    marginTop: Spacing.lg,
   },
 });

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, StyleSheet, Image, Pressable, Alert } from "react-native";
+import { View, StyleSheet, Image, Pressable, Alert, SafeAreaView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -8,9 +8,8 @@ import { ScreenKeyboardAwareScrollView } from "@/components/ScreenKeyboardAwareS
 import { TextInput } from "@/components/TextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTheme } from "@/hooks/useTheme";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { Spacing, Typography, BorderRadius } from "@/constants/theme";
+import { Spacing, Colors } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 import { isBiometricEnabled } from "@/services/biometric";
 
@@ -26,7 +25,6 @@ export default function LoginScreen() {
   );
 
   const { login, loginWithBiometric, biometricAvailable } = useAuth();
-  const { theme } = useTheme();
   const { t } = useTranslation();
   const navigation = useNavigation<NavigationProp>();
 
@@ -77,123 +75,106 @@ export default function LoginScreen() {
   }
 
   return (
-    <ScreenKeyboardAwareScrollView>
-      <View style={styles.container}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={require("@/assets/images/maica-logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <ThemedText
-            style={[styles.subtitle, { color: theme.textSecondary }]}
-          >
-            {t("auth.tagline")}
-          </ThemedText>
-        </View>
+    <View style={styles.rootContainer}>
+      <ScreenKeyboardAwareScrollView>
+        <View style={styles.container}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("@/assets/images/maica-logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <ThemedText type="body" style={styles.subtitle}>
+              {t("auth.tagline")}
+            </ThemedText>
+          </View>
 
-        <View style={styles.formContainer}>
-          <TextInput
-            label={t("auth.email")}
-            value={email}
-            onChangeText={setEmail}
-            placeholder={t("auth.email")}
-            keyboardType="email-address"
-            error={errors.email}
-          />
+          <View style={styles.formContainer}>
+            <TextInput
+              label={t("auth.email")}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={t("auth.email")}
+              keyboardType="email-address"
+              error={errors.email}
+            />
 
-          <TextInput
-            label={t("auth.password")}
-            value={password}
-            onChangeText={setPassword}
-            placeholder={t("auth.password")}
-            secureTextEntry
-            error={errors.password}
-          />
+            <TextInput
+              label={t("auth.password")}
+              value={password}
+              onChangeText={setPassword}
+              placeholder={t("auth.password")}
+              secureTextEntry
+              error={errors.password}
+            />
 
-          <PrimaryButton
-            title={t("auth.login")}
-            onPress={handleLogin}
-            loading={loading}
-          />
+            <PrimaryButton
+              title={t("auth.login")}
+              onPress={handleLogin}
+              loading={loading}
+            />
 
-          {showBiometricButton ? (
-            <Pressable
-              onPress={handleBiometricLogin}
-              disabled={loading}
-              style={({ pressed }) => [
-                styles.biometricButton,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}
-            >
-              <Feather name="unlock" size={20} color={theme.accent} />
-              <ThemedText
-                style={[styles.biometricText, { color: theme.accent }]}
+            {showBiometricButton ? (
+              <Pressable
+                onPress={handleBiometricLogin}
+                disabled={loading}
+                style={({ pressed }) => [
+                  styles.biometricButton,
+                  { opacity: pressed ? 0.7 : 1 },
+                ]}
               >
-                {t("auth.useBiometric")}
+                <Feather name="unlock" size={18} color={Colors.primary} />
+                <ThemedText style={styles.biometricText}>
+                  {t("auth.useBiometric")}
+                </ThemedText>
+              </Pressable>
+            ) : null}
+
+            <Pressable
+              onPress={() => navigation.navigate("Register")}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            >
+              <ThemedText type="body" style={styles.linkText}>
+                {t("auth.noAccount")}
               </ThemedText>
             </Pressable>
-          ) : null}
-
-          <Pressable
-            onPress={() => navigation.navigate("Register")}
-            style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
-          >
-            <ThemedText
-              style={[styles.linkText, { color: theme.accent }]}
-            >
-              {t("auth.noAccount")}
-            </ThemedText>
-          </Pressable>
+          </View>
         </View>
-      </View>
-    </ScreenKeyboardAwareScrollView>
+      </ScreenKeyboardAwareScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: Colors.white,
+  },
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingHorizontal: Spacing.md,
-    paddingTop: Spacing["2xl"],
-    paddingBottom: Spacing["2xl"],
-    width: "100%",
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
   },
   logoContainer: {
     alignItems: "center",
     marginBottom: Spacing["3xl"],
-    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xl,
-    width: "100%",
   },
   logo: {
-    width: 180,
-    height: 180,
-    marginBottom: Spacing["2xl"],
-  },
-  title: {
-    fontSize: Typography.h1.fontSize,
-    fontWeight: "700" as const,
-    marginBottom: Spacing.sm,
+    width: 200,
+    height: 200,
+    marginBottom: Spacing.xl,
   },
   subtitle: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: "400" as const,
     textAlign: "center" as const,
   },
   formContainer: {
     marginTop: Spacing.xl,
-    paddingHorizontal: Spacing.md,
-    width: "100%",
+    gap: Spacing.md,
   },
   linkText: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: "400" as const,
     textAlign: "center" as const,
     marginTop: Spacing.xl,
   },
@@ -201,14 +182,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    height: 48,
-    borderRadius: BorderRadius.xs,
+    height: Spacing.buttonHeight,
+    borderRadius: 8,
     borderWidth: 1,
+    borderColor: Colors.primary,
     marginTop: Spacing.md,
-    gap: Spacing.sm,
+    backgroundColor: Colors.gray50,
   },
   biometricText: {
-    fontSize: Typography.h4.fontSize,
-    fontWeight: "600" as const,
+    marginLeft: Spacing.sm,
   },
 });
