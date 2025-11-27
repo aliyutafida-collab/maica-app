@@ -1,0 +1,77 @@
+Make the following updates across the entire MaiCa project:
+
+1. **Add Full Arabic (RTL) Localization**
+   - Add `ar.json` in the languages folder.
+   - Include full translations for ALL strings:
+     login, register, dashboard, menu, products, sales, expenses, reports, onboarding questions, financial learning page, error messages, success messages.
+   - Add Arabic to language switcher.
+   - Ensure i18n setup includes RTL support using:
+       import { I18nManager } from 'react-native'
+     When Arabic is selected:
+       I18nManager.allowRTL(true)
+       I18nManager.forceRTL(true)
+       Restart the app programmatically.
+     When English/Hausa/Yoruba/Igbo selected:
+       I18nManager.allowRTL(false)
+       I18nManager.forceRTL(false)
+
+2. **Apply Full RTL UI Transformation**
+   - Flip margins/paddings/directions automatically with:
+       flexDirection: isRTL ? 'row-reverse' : 'row'
+       textAlign: isRTL ? 'right' : 'left'
+   - Flip header icons (back button, menu, etc.)
+   - Flip bottom tabs for Arabic.
+   - Flip dashboard layout, cards, and quick actions.
+   - Flip product list and report tables.
+   - Flip onboarding screen layout.
+
+3. **Auth Screens Fix (No Dark Mode for Login/Register)**
+   - Force white background only.
+   - Disable dark mode for these screens using explicit styles.
+   - Ensure main app theme does not override login/register.
+
+4. **Fix Dashboard Display**
+   - Show COMPANY NAME fully (from onboarding).
+   - Fix username truncation.
+   - Redesign dashboard header for better alignment.
+   - Increase padding around avatar + company name.
+   - Ensure layout works in RTL and LTR.
+
+5. **Currency Formatting (No Decimals, Only Thousand Separator)**
+   - Implement formatter:
+       3000 → 3,000
+       500000 → 500,000
+     Apply to:
+       dashboard totals,
+       product price fields,
+       sales history,
+       expense history,
+       report summaries.
+
+6. **Fix Multi-Product Onboarding**
+   - Allow user to add unlimited products during registration.
+   - Each product should be saved to Supabase.
+   - Redirect to dashboard only after all products are saved.
+   - Ensure products display immediately in Products tab.
+
+7. **Biometric Login (Fix Failure)**
+   - Update logic:
+       If no token exists → show “Please login first”.
+       If token exists → authenticate using FaceID/TouchID.
+   - Fix undefined/null token errors.
+   - Ensure biometric login works on both iOS + Android.
+
+8. **Financial Learning Page**
+   - Add translations for Hausa, Yoruba, Igbo, Arabic.
+   - Ensure all paragraphs, headers, examples and activities are translated.
+   - Fix layout so it is scrollable and RTL-compatible.
+
+9. **General Improvements**
+   - Fix spacing inconsistencies across screens.
+   - Ensure dark/light mode switching works only for main app.
+   - Improve performance for product dropdowns.
+   - Fix text that overflows on small phones.
+
+After implementing all changes:
+   - Commit all modified files.
+   - Push to main branch.

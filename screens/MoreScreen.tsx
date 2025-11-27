@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, StyleSheet, Pressable, Alert, Switch } from "react-native";
+import { View, StyleSheet, Pressable, Alert, Switch, I18nManager } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
+import { useLanguage, useTranslation, useRTL } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
@@ -25,6 +25,7 @@ const LANGUAGES = [
   { code: "yo", name: "Yoruba" },
   { code: "ig", name: "Igbo" },
   { code: "fr", name: "Français" },
+  { code: "ar", name: "العربية" },
 ];
 
 const THEME_MODES = [
@@ -37,9 +38,13 @@ export default function MoreScreen() {
   const { user, logout, biometricAvailable } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { t } = useTranslation();
+  const { isRTL } = useRTL();
   const { theme, themeMode, setThemeMode } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const [biometricEnabled, setBiometricEnabledState] = useState(false);
+  
+  const rtlStyle = isRTL ? { flexDirection: 'row-reverse' as const } : {};
+  const rtlTextAlign = isRTL ? { textAlign: 'right' as const } : {};
 
   useEffect(() => {
     loadBiometricSetting();
@@ -101,7 +106,7 @@ export default function MoreScreen() {
   return (
     <ScreenScrollView>
       <View style={styles.header}>
-        <ThemedText style={[styles.title, { color: theme.text }]}>
+        <ThemedText style={[styles.title, { color: theme.text }, rtlTextAlign]}>
           {t("more.title")}
         </ThemedText>
       </View>
@@ -110,23 +115,24 @@ export default function MoreScreen() {
         style={[
           styles.profileCard,
           { backgroundColor: theme.surface, borderColor: theme.border },
+          rtlStyle,
         ]}
       >
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, isRTL ? { marginLeft: Spacing.lg, marginRight: 0 } : {}]}>
           <Feather name="user" size={32} color={theme.primary} />
         </View>
         <View style={styles.profileInfo}>
-          <ThemedText style={[styles.name, { color: theme.text }]}>
+          <ThemedText style={[styles.name, { color: theme.text }, rtlTextAlign]}>
             {user?.name}
           </ThemedText>
-          <ThemedText style={[styles.email, { color: theme.textSecondary }]}>
+          <ThemedText style={[styles.email, { color: theme.textSecondary }, rtlTextAlign]}>
             {user?.email}
           </ThemedText>
         </View>
       </ThemedView>
 
       <View style={styles.section}>
-        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }, rtlTextAlign]}>
           {t("more.features")}
         </ThemedText>
 
@@ -139,15 +145,16 @@ export default function MoreScreen() {
               borderColor: theme.border,
               opacity: pressed ? 0.8 : 1,
             },
+            rtlStyle,
           ]}
         >
-          <View style={styles.menuItemLeft}>
+          <View style={[styles.menuItemLeft, rtlStyle]}>
             <Feather name="zap" size={24} color={theme.accent} />
-            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
               {t("more.aiAdvisor")}
             </ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
         </Pressable>
 
         <Pressable
@@ -159,15 +166,16 @@ export default function MoreScreen() {
               borderColor: theme.border,
               opacity: pressed ? 0.8 : 1,
             },
+            rtlStyle,
           ]}
         >
-          <View style={styles.menuItemLeft}>
+          <View style={[styles.menuItemLeft, rtlStyle]}>
             <Feather name="star" size={24} color={theme.accent} />
-            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
               {t("more.subscription")}
             </ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
         </Pressable>
 
         <Pressable
@@ -179,20 +187,21 @@ export default function MoreScreen() {
               borderColor: theme.border,
               opacity: pressed ? 0.8 : 1,
             },
+            rtlStyle,
           ]}
         >
-          <View style={styles.menuItemLeft}>
+          <View style={[styles.menuItemLeft, rtlStyle]}>
             <Feather name="book" size={24} color={theme.accent} />
-            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
               {t("more.financial")}
             </ThemedText>
           </View>
-          <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+          <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
         </Pressable>
       </View>
 
       <View style={styles.section}>
-        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }, rtlTextAlign]}>
           {t("more.preferences")}
         </ThemedText>
 
@@ -205,19 +214,20 @@ export default function MoreScreen() {
               borderColor: theme.border,
               opacity: pressed ? 0.8 : 1,
             },
+            rtlStyle,
           ]}
         >
-          <View style={styles.menuItemLeft}>
+          <View style={[styles.menuItemLeft, rtlStyle]}>
             <Feather name="sun" size={24} color={theme.accent} />
-            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
               {t("more.theme")}
             </ThemedText>
           </View>
-          <View style={styles.menuItemRight}>
-            <ThemedText style={[styles.menuItemValue, { color: theme.textSecondary }]}>
+          <View style={[styles.menuItemRight, rtlStyle]}>
+            <ThemedText style={[styles.menuItemValue, { color: theme.textSecondary }, rtlTextAlign]}>
               {t(`more.${THEME_MODES.find((m) => m.value === themeMode)?.key || "themeSystem"}`)}
             </ThemedText>
-            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
           </View>
         </Pressable>
 
@@ -230,19 +240,20 @@ export default function MoreScreen() {
               borderColor: theme.border,
               opacity: pressed ? 0.8 : 1,
             },
+            rtlStyle,
           ]}
         >
-          <View style={styles.menuItemLeft}>
+          <View style={[styles.menuItemLeft, rtlStyle]}>
             <Feather name="globe" size={24} color={theme.accent} />
-            <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
               {t("more.language")}
             </ThemedText>
           </View>
-          <View style={styles.menuItemRight}>
-            <ThemedText style={[styles.menuItemValue, { color: theme.textSecondary }]}>
+          <View style={[styles.menuItemRight, rtlStyle]}>
+            <ThemedText style={[styles.menuItemValue, { color: theme.textSecondary }, rtlTextAlign]}>
               {LANGUAGES.find((l) => l.code === language)?.name || "English"}
             </ThemedText>
-            <Feather name="chevron-right" size={20} color={theme.textSecondary} />
+            <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
           </View>
         </Pressable>
 
@@ -254,11 +265,12 @@ export default function MoreScreen() {
                 backgroundColor: theme.surface,
                 borderColor: theme.border,
               },
+              rtlStyle,
             ]}
           >
-            <View style={styles.menuItemLeft}>
+            <View style={[styles.menuItemLeft, rtlStyle]}>
               <Feather name="shield" size={24} color={theme.accent} />
-              <ThemedText style={[styles.menuItemText, { color: theme.text }]}>
+              <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
                 {t("more.enableBiometric")}
               </ThemedText>
             </View>
@@ -273,7 +285,7 @@ export default function MoreScreen() {
       </View>
 
       <View style={styles.section}>
-        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+        <ThemedText style={[styles.sectionTitle, { color: theme.textSecondary }, rtlTextAlign]}>
           {t("more.account")}
         </ThemedText>
 
@@ -286,11 +298,12 @@ export default function MoreScreen() {
               borderColor: theme.border,
               opacity: pressed ? 0.8 : 1,
             },
+            rtlStyle,
           ]}
         >
-          <View style={styles.menuItemLeft}>
+          <View style={[styles.menuItemLeft, rtlStyle]}>
             <Feather name="log-out" size={24} color={theme.error} />
-            <ThemedText style={[styles.menuItemText, { color: theme.error }]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.error }, rtlTextAlign]}>
               {t("auth.logout")}
             </ThemedText>
           </View>

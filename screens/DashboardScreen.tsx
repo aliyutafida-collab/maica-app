@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, StyleSheet, Pressable, RefreshControl } from "react-native";
+import { View, StyleSheet, Pressable, RefreshControl, I18nManager } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
@@ -7,7 +7,7 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTranslation } from "@/contexts/LanguageContext";
+import { useTranslation, useRTL } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { getSales, getExpenses } from "@/services/storage";
@@ -28,8 +28,12 @@ export default function DashboardScreen() {
 
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { isRTL } = useRTL();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  
+  const rtlStyle = isRTL ? { flexDirection: 'row-reverse' as const } : {};
+  const rtlTextAlign = isRTL ? { textAlign: 'right' as const } : {};
 
   function getDateRange(periodType: "day" | "week" | "month") {
     const now = new Date();
@@ -108,10 +112,10 @@ export default function DashboardScreen() {
       }
     >
       <View style={styles.header}>
-        <ThemedText style={[styles.greeting, { color: theme.text }]}>
+        <ThemedText style={[styles.greeting, { color: theme.text }, rtlTextAlign]}>
           {t("dashboard.welcome")}, {user?.name}
         </ThemedText>
-        <ThemedText style={[styles.subtitle, { color: theme.textSecondary }]}>
+        <ThemedText style={[styles.subtitle, { color: theme.textSecondary }, rtlTextAlign]}>
           {t("dashboard.todaySummary")}
         </ThemedText>
       </View>
@@ -206,10 +210,10 @@ export default function DashboardScreen() {
       </ThemedView>
 
       <View style={styles.actionsContainer}>
-        <ThemedText style={[styles.sectionTitle, { color: theme.text }]}>
+        <ThemedText style={[styles.sectionTitle, { color: theme.text }, rtlTextAlign]}>
           {t("dashboard.quickActions")}
         </ThemedText>
-        <View style={styles.actionsGrid}>
+        <View style={[styles.actionsGrid, rtlStyle]}>
           <Pressable
             onPress={() => navigation.navigate("AddSale")}
             style={({ pressed }) => [
