@@ -15,7 +15,9 @@
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^6.9.3",
     "crypto": "^1.0.1",
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^2.6.7",
+    "cors": "^2.8.5",
+    "pdfkit": "^0.15.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

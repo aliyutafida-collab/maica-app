@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert, ScrollView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Picker } from "@react-native-picker/picker";
@@ -9,8 +9,9 @@ import { TextInput } from "@/components/TextInput";
 import { PrimaryButton } from "@/components/PrimaryButton";
 import { SecondaryButton } from "@/components/SecondaryButton";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation, useRTL } from "@/contexts/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
-import { Spacing, Typography, BorderRadius } from "@/constants/theme";
+import { Spacing, BorderRadius } from "@/constants/theme";
 import { addSale, getProducts } from "@/services/storage";
 import { DEFAULT_TAX_RATE, calcSubtotal, calcTax, calcTotal } from "@/lib/tax";
 import { formatCurrency } from "@/lib/formatters";
@@ -30,8 +31,13 @@ export default function AddSaleScreen() {
   const [errors, setErrors] = useState<any>({});
 
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const { isRTL } = useRTL();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+
+  const rtlStyle = isRTL ? { flexDirection: "row-reverse" as const } : {};
+  const rtlTextAlign = isRTL ? { textAlign: "right" as const } : {};
 
   useEffect(() => {
     async function loadProducts() {
@@ -67,11 +73,11 @@ export default function AddSaleScreen() {
   async function handleSave() {
     const newErrors: any = {};
 
-    if (!selectedProductId) newErrors.product = "Product is required";
+    if (!selectedProductId) newErrors.product = t("sales.productRequired") || "Product is required";
     if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0)
-      newErrors.quantity = "Valid quantity is required";
+      newErrors.quantity = t("sales.validQuantity") || "Valid quantity is required";
     if (!unitPrice || isNaN(Number(unitPrice)))
-      newErrors.unitPrice = "Valid price is required";
+      newErrors.unitPrice = t("sales.validPrice") || "Valid price is required";
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -96,7 +102,7 @@ export default function AddSaleScreen() {
       });
       navigation.goBack();
     } catch (error: any) {
-      Alert.alert("Error", error.message);
+      Alert.alert(t("common.error") || "Error", error.message);
     } finally {
       setLoading(false);
     }
@@ -105,20 +111,20 @@ export default function AddSaleScreen() {
   return (
     <ScreenKeyboardAwareScrollView>
       <View style={styles.header}>
-        <ThemedText style={[styles.title, { color: theme.text }]}>
-          Record Sale
+        <ThemedText style={[styles.title, { color: theme.text }, rtlTextAlign]}>
+          {t("sales.recordSale") || "Record Sale"}
         </ThemedText>
       </View>
 
       {products.length === 0 ? (
-        <ThemedText style={[styles.warning, { color: theme.error }]}>
-          No products available. Please add a product first.
+        <ThemedText style={[styles.warning, { color: theme.error }, rtlTextAlign]}>
+          {t("sales.noProductsAvailable") || "No products available. Please add a product first."}
         </ThemedText>
       ) : (
         <>
           <View style={styles.inputContainer}>
-            <ThemedText style={[styles.label, { color: theme.text }]}>
-              Product
+            <ThemedText style={[styles.label, { color: theme.text }, rtlTextAlign]}>
+              {t("sales.product") || "Product"}
             </ThemedText>
             <View
               style={[
@@ -143,10 +149,15 @@ export default function AddSaleScreen() {
                 ))}
               </Picker>
             </View>
+            {errors.product ? (
+              <ThemedText style={[styles.errorText, { color: theme.error }]}>
+                {errors.product}
+              </ThemedText>
+            ) : null}
           </View>
 
           <TextInput
-            label="Quantity"
+            label={t("sales.quantity") || "Quantity"}
             value={quantity}
             onChangeText={setQuantity}
             placeholder="1"
@@ -155,16 +166,16 @@ export default function AddSaleScreen() {
           />
 
           <TextInput
-            label="Unit Price"
+            label={t("sales.unitPrice") || "Unit Price"}
             value={unitPrice}
             onChangeText={setUnitPrice}
-            placeholder="0.00"
+            placeholder="0"
             keyboardType="numeric"
             error={errors.unitPrice}
           />
 
           <TextInput
-            label="Tax Rate (%)"
+            label={t("sales.taxRate") || "Tax Rate (%)"}
             value={taxRate}
             onChangeText={setTaxRate}
             placeholder="7.5"
@@ -172,47 +183,47 @@ export default function AddSaleScreen() {
           />
 
           <TextInput
-            label="Discount"
+            label={t("sales.discount") || "Discount"}
             value={discount}
             onChangeText={setDiscount}
-            placeholder="0.00"
+            placeholder="0"
             keyboardType="numeric"
           />
 
           <View
             style={[
               styles.totalCard,
-              { backgroundColor: theme.backgroundDefault, borderColor: theme.border },
+              { backgroundColor: theme.surface, borderColor: theme.border },
             ]}
           >
-            <View style={styles.totalRow}>
+            <View style={[styles.totalRow, rtlStyle]}>
               <ThemedText style={[styles.totalLabel, { color: theme.textSecondary }]}>
-                Subtotal
+                {t("sales.subtotal") || "Subtotal"}
               </ThemedText>
               <ThemedText style={[styles.totalValue, { color: theme.text }]}>
                 {formatCurrency(subtotal)}
               </ThemedText>
             </View>
-            <View style={styles.totalRow}>
+            <View style={[styles.totalRow, rtlStyle]}>
               <ThemedText style={[styles.totalLabel, { color: theme.textSecondary }]}>
-                Tax
+                {t("sales.tax") || "Tax"}
               </ThemedText>
               <ThemedText style={[styles.totalValue, { color: theme.text }]}>
                 {formatCurrency(taxAmount)}
               </ThemedText>
             </View>
-            <View style={styles.totalRow}>
+            <View style={[styles.totalRow, rtlStyle]}>
               <ThemedText style={[styles.totalLabel, { color: theme.textSecondary }]}>
-                Discount
+                {t("sales.discount") || "Discount"}
               </ThemedText>
               <ThemedText style={[styles.totalValue, { color: theme.text }]}>
-                -₦{Number(discount).toFixed(2)}
+                -{formatCurrency(Number(discount))}
               </ThemedText>
             </View>
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
-            <View style={styles.totalRow}>
+            <View style={[styles.totalRow, rtlStyle]}>
               <ThemedText style={[styles.finalLabel, { color: theme.text }]}>
-                Total
+                {t("sales.total") || "Total"}
               </ThemedText>
               <ThemedText style={[styles.finalValue, { color: theme.primary }]}>
                 {formatCurrency(total)}
@@ -222,12 +233,12 @@ export default function AddSaleScreen() {
 
           <View style={styles.buttons}>
             <PrimaryButton
-              title="Record Sale"
+              title={t("sales.recordSale") || "Record Sale"}
               onPress={handleSave}
               loading={loading}
             />
             <SecondaryButton
-              title="Cancel"
+              title={t("common.cancel") || "Cancel"}
               onPress={() => navigation.goBack()}
             />
           </View>
@@ -242,10 +253,14 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   title: {
-    fontSize: 32, fontWeight: '700' as const, lineHeight: 40,
+    fontSize: 32,
+    fontWeight: "700",
+    lineHeight: 40,
   },
   warning: {
-    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
     textAlign: "center",
     marginTop: Spacing.xl,
   },
@@ -253,14 +268,19 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
   },
   label: {
-    fontSize: 12, fontWeight: '400' as const, lineHeight: 16,
+    fontSize: 12,
     fontWeight: "600",
+    lineHeight: 16,
     marginBottom: Spacing.sm,
   },
   pickerContainer: {
     borderWidth: 1,
     borderRadius: BorderRadius.xs,
     overflow: "hidden",
+  },
+  errorText: {
+    fontSize: 12,
+    marginTop: 4,
   },
   totalCard: {
     borderRadius: BorderRadius.sm,
@@ -274,18 +294,24 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   totalLabel: {
-    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
   },
   totalValue: {
-    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
   },
   finalLabel: {
-    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
+    fontSize: 16,
     fontWeight: "600",
+    lineHeight: 24,
   },
   finalValue: {
-    fontSize: 24, fontWeight: '700' as const, lineHeight: 32,
+    fontSize: 24,
     fontWeight: "700",
+    lineHeight: 32,
   },
   divider: {
     height: 1,

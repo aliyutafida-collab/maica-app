@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  companyName?: string;
   createdAt: string;
 }
 
@@ -10,6 +11,7 @@ export interface Product {
   name: string;
   category: string;
   price: number;
+  cost: number;
   stock: number;
   description?: string;
   userId: string;

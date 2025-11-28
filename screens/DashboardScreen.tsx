@@ -1,8 +1,9 @@
-import { useState, useCallback } from "react";
-import { View, StyleSheet, Pressable, RefreshControl, I18nManager } from "react-native";
+import { useState, useCallback, useEffect } from "react";
+import { View, StyleSheet, Pressable, RefreshControl } from "react-native";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { ScreenScrollView } from "@/components/ScreenScrollView";
@@ -12,6 +13,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { Spacing, Typography, BorderRadius } from "@/constants/theme";
 import { getSales, getExpenses } from "@/services/storage";
 import { formatCurrency } from "@/lib/formatters";
+import { debounce } from "@/services/httpClient";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -25,15 +27,25 @@ export default function DashboardScreen() {
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<"day" | "week" | "month">("day");
+  const [companyName, setCompanyName] = useState<string>("");
 
   const { user } = useAuth();
   const { t } = useTranslation();
-  const { isRTL } = useRTL();
+  const { isRTL, language } = useRTL();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  
-  const rtlStyle = isRTL ? { flexDirection: 'row-reverse' as const } : {};
-  const rtlTextAlign = isRTL ? { textAlign: 'right' as const } : {};
+
+  const rtlStyle = isRTL ? { flexDirection: "row-reverse" as const } : {};
+  const rtlTextAlign = isRTL ? { textAlign: "right" as const } : {};
+
+  useEffect(() => {
+    async function loadCompanyName() {
+      if (!user) return;
+      const storedName = await AsyncStorage.getItem(`@maica_business_name_${user.id}`);
+      setCompanyName(storedName || user.name || "");
+    }
+    loadCompanyName();
+  }, [user]);
 
   function getDateRange(periodType: "day" | "week" | "month") {
     const now = new Date();
@@ -57,43 +69,51 @@ export default function DashboardScreen() {
   async function loadData() {
     if (!user) return;
 
-    const sales = await getSales(user.id);
-    const expenses = await getExpenses(user.id);
+    try {
+      const sales = await getSales(user.id);
+      const expenses = await getExpenses(user.id);
 
-    // Calculate for all periods
-    const periods = ["day", "week", "month"] as const;
+      const periods = ["day", "week", "month"] as const;
 
-    for (const p of periods) {
-      const { start, end } = getDateRange(p);
-      const salesTotals = sales
-        .filter((s) => {
-          const d = new Date(s.createdAt);
-          return d >= start && d < end;
-        })
-        .reduce((sum, s) => sum + s.total, 0);
-      const expensesTotals = expenses
-        .filter((e) => {
-          const d = new Date(e.createdAt);
-          return d >= start && d < end;
-        })
-        .reduce((sum, e) => sum + e.amount, 0);
+      for (const p of periods) {
+        const { start, end } = getDateRange(p);
+        const salesTotals = sales
+          .filter((s) => {
+            const d = new Date(s.createdAt);
+            return d >= start && d < end;
+          })
+          .reduce((sum, s) => sum + s.total, 0);
+        const expensesTotals = expenses
+          .filter((e) => {
+            const d = new Date(e.createdAt);
+            return d >= start && d < end;
+          })
+          .reduce((sum, e) => sum + e.amount, 0);
 
-      if (p === "day") {
-        setTodaySales(salesTotals);
-        setTodayExpenses(expensesTotals);
-      } else if (p === "week") {
-        setWeeklySales(salesTotals);
-        setWeeklyExpenses(expensesTotals);
-      } else {
-        setMonthlySales(salesTotals);
-        setMonthlyExpenses(expensesTotals);
+        if (p === "day") {
+          setTodaySales(salesTotals);
+          setTodayExpenses(expensesTotals);
+        } else if (p === "week") {
+          setWeeklySales(salesTotals);
+          setWeeklyExpenses(expensesTotals);
+        } else {
+          setMonthlySales(salesTotals);
+          setMonthlyExpenses(expensesTotals);
+        }
       }
+    } catch (error) {
+      console.error("Failed to load dashboard data:", error);
     }
   }
 
+  const debouncedLoad = useCallback(
+    debounce(() => loadData(), 300),
+    [user]
+  );
+
   useFocusEffect(
     useCallback(() => {
-      loadData();
+      debouncedLoad();
     }, [user])
   );
 
@@ -103,7 +123,13 @@ export default function DashboardScreen() {
     setRefreshing(false);
   }
 
-  const netIncome = todaySales - todayExpenses;
+  const displayName = companyName || user?.name || t("dashboard.yourBusiness") || "Your Business";
+
+  const periodLabels = {
+    day: t("dashboard.today") || "Today",
+    week: t("dashboard.week") || "Week",
+    month: t("dashboard.month") || "Month",
+  };
 
   return (
     <ScreenScrollView
@@ -113,14 +139,14 @@ export default function DashboardScreen() {
     >
       <View style={styles.header}>
         <ThemedText style={[styles.greeting, { color: theme.text }, rtlTextAlign]}>
-          {t("dashboard.welcome")}, {user?.name}
+          {t("dashboard.welcome") || "Welcome"}, {displayName}
         </ThemedText>
         <ThemedText style={[styles.subtitle, { color: theme.textSecondary }, rtlTextAlign]}>
-          {t("dashboard.todaySummary")}
+          {t("dashboard.todaySummary") || "Today's Summary"}
         </ThemedText>
       </View>
 
-      <View style={styles.periodSelector}>
+      <View style={[styles.periodSelector, rtlStyle]}>
         {(["day", "week", "month"] as const).map((p) => (
           <Pressable
             key={p}
@@ -128,8 +154,7 @@ export default function DashboardScreen() {
             style={[
               styles.periodButton,
               {
-                backgroundColor:
-                  period === p ? theme.accent : theme.surface,
+                backgroundColor: period === p ? theme.accent : theme.surface,
                 borderColor: theme.border,
               },
             ]}
@@ -140,7 +165,7 @@ export default function DashboardScreen() {
                 { color: period === p ? "#FFFFFF" : theme.text },
               ]}
             >
-              {p === "day" ? "Today" : p === "week" ? "Week" : "Month"}
+              {periodLabels[p]}
             </ThemedText>
           </Pressable>
         ))}
@@ -149,10 +174,10 @@ export default function DashboardScreen() {
       <ThemedView
         style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
       >
-        <View style={styles.summaryRow}>
+        <View style={[styles.summaryRow, rtlStyle]}>
           <View style={styles.summaryItem}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              {t("dashboard.sales")}
+              {t("dashboard.sales") || "Sales"}
             </ThemedText>
             <ThemedText style={[styles.value, { color: theme.success }]}>
               {formatCurrency(
@@ -166,7 +191,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.summaryItem}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              {t("dashboard.expenses")}
+              {t("dashboard.expenses") || "Expenses"}
             </ThemedText>
             <ThemedText style={[styles.value, { color: theme.error }]}>
               {formatCurrency(
@@ -180,7 +205,7 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.summaryItem}>
             <ThemedText style={[styles.label, { color: theme.textSecondary }]}>
-              {t("dashboard.net")}
+              {t("dashboard.net") || "Net"}
             </ThemedText>
             <ThemedText
               style={[
@@ -211,7 +236,7 @@ export default function DashboardScreen() {
 
       <View style={styles.actionsContainer}>
         <ThemedText style={[styles.sectionTitle, { color: theme.text }, rtlTextAlign]}>
-          {t("dashboard.quickActions")}
+          {t("dashboard.quickActions") || "Quick Actions"}
         </ThemedText>
         <View style={[styles.actionsGrid, rtlStyle]}>
           <Pressable
@@ -222,7 +247,9 @@ export default function DashboardScreen() {
             ]}
           >
             <Feather name="shopping-cart" size={32} color={theme.accent} />
-            <ThemedText style={styles.actionLabel}>{t("dashboard.addSale")}</ThemedText>
+            <ThemedText style={[styles.actionLabel, { color: theme.text }]}>
+              {t("dashboard.addSale") || "Add Sale"}
+            </ThemedText>
           </Pressable>
 
           <Pressable
@@ -233,7 +260,9 @@ export default function DashboardScreen() {
             ]}
           >
             <Feather name="credit-card" size={32} color={theme.accent} />
-            <ThemedText style={styles.actionLabel}>{t("dashboard.addExpense")}</ThemedText>
+            <ThemedText style={[styles.actionLabel, { color: theme.text }]}>
+              {t("dashboard.addExpense") || "Add Expense"}
+            </ThemedText>
           </Pressable>
 
           <Pressable
@@ -244,7 +273,9 @@ export default function DashboardScreen() {
             ]}
           >
             <Feather name="package" size={32} color={theme.accent} />
-            <ThemedText style={styles.actionLabel}>{t("dashboard.addProduct")}</ThemedText>
+            <ThemedText style={[styles.actionLabel, { color: theme.text }]}>
+              {t("dashboard.addProduct") || "Add Product"}
+            </ThemedText>
           </Pressable>
         </View>
       </View>
@@ -258,13 +289,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   greeting: {
-    fontSize: Typography.h1.fontSize,
-    fontWeight: "700" as const,
+    fontSize: 28,
+    fontWeight: "700",
+    lineHeight: 36,
     marginBottom: Spacing.xs,
   },
   subtitle: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: "400" as const,
+    fontSize: 16,
+    fontWeight: "400",
+    lineHeight: 24,
   },
   periodSelector: {
     flexDirection: "row",
@@ -280,8 +313,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   periodButtonText: {
-    fontSize: Typography.bodySm.fontSize,
-    fontWeight: "600" as const,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 20,
   },
   card: {
     borderRadius: BorderRadius.sm,
@@ -300,21 +334,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   label: {
-    fontSize: Typography.bodySm.fontSize,
-    fontWeight: "500" as const,
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
     marginBottom: Spacing.xs,
   },
   value: {
-    fontSize: Typography.body.fontSize,
-    fontWeight: "600" as const,
+    fontSize: 16,
+    fontWeight: "600",
+    lineHeight: 24,
   },
   actionsContainer: {
     marginTop: Spacing.lg,
     paddingHorizontal: Spacing.lg,
   },
   sectionTitle: {
-    fontSize: Typography.h3.fontSize,
-    fontWeight: "600" as const,
+    fontSize: 20,
+    fontWeight: "600",
+    lineHeight: 28,
     marginBottom: Spacing.lg,
   },
   actionsGrid: {
@@ -333,9 +370,10 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   actionLabel: {
-    fontSize: Typography.bodySm.fontSize,
-    fontWeight: "500" as const,
+    fontSize: 14,
+    fontWeight: "500",
+    lineHeight: 20,
     marginTop: Spacing.sm,
-    textAlign: "center" as const,
+    textAlign: "center",
   },
 });
