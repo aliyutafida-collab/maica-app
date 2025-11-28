@@ -1,0 +1,23 @@
+{
+  "app": {
+    "title": "MaiCa",
+    "login": {
+      "email": "Imel",
+      "password": "Kalmar sirri",
+      "login": "Shiga",
+      "register_link": "Ba ku da asusu ba?"
+    },
+    "register": {
+      "fullName": "Cikakken Suna",
+      "email": "Imel",
+      "password": "Kalmar sirri",
+      "confirmPassword": "Tabbatar da Kalmar sirri",
+      "register": "Yi rajista"
+    },
+    "errors": {
+      "required": "Ana buƙatar wannan filin",
+      "invalid": "Ƙima mara inganci",
+      "login_first": "Da fatan za a fara shiga"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "app": {
+    "title": "MaiCa",
+    "login": {
+      "email": "E-mail",
+      "password": "Mot de passe",
+      "login": "Connexion",
+      "register_link": "Vous n'avez pas de compte?"
+    },
+    "register": {
+      "fullName": "Nom complet",
+      "email": "E-mail",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe",
+      "register": "S'inscrire"
+    },
+    "errors": {
+      "required": "Ce champ est requis",
+      "invalid": "Valeur invalide",
+      "login_first": "Veuillez d'abord vous connecter"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "app": {
+    "title": "MaiCa",
+    "login": {
+      "email": "Imeeli",
+      "password": "Ọ̀rọ̀ aṣínà",
+      "login": "Wọle",
+      "register_link": "Ṣe o ni akọọlẹ?"
+    },
+    "register": {
+      "fullName": "Orúkọ Kíkún",
+      "email": "Imeeli",
+      "password": "Ọ̀rọ̀ aṣínà",
+      "confirmPassword": "Jẹ́rìísí Ọ̀rọ̀ aṣínà",
+      "register": "Forúkọsílẹ̀"
+    },
+    "errors": {
+      "required": "A nílò fíìldì yìí",
+      "invalid": "Iye tí kò tọ́",
+      "login_first": "Jọ̀wọ́ wọlé kọ́kọ́"
+    }
+  }
+}

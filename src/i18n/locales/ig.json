@@ -1,0 +1,23 @@
+{
+  "app": {
+    "title": "MaiCa",
+    "login": {
+      "email": "Email",
+      "password": "Okwuntughe",
+      "login": "Banye",
+      "register_link": "Ị nweghị akaụntụ?"
+    },
+    "register": {
+      "fullName": "Aha Zuru Ezu",
+      "email": "Email",
+      "password": "Okwuntughe",
+      "confirmPassword": "Kwadoo Okwuntughe",
+      "register": "Debanye aha"
+    },
+    "errors": {
+      "required": "A chọrọ ubi a",
+      "invalid": "Uru adịghị mma",
+      "login_first": "Biko banye n'ụzọ mbụ"
+    }
+  }
+}

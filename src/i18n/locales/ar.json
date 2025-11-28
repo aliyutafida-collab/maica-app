@@ -1,0 +1,23 @@
+{
+  "app": {
+    "title": "MaiCa",
+    "login": {
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "login": "تسجيل الدخول",
+      "register_link": "ليس لديك حساب؟"
+    },
+    "register": {
+      "fullName": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "password": "كلمة المرور",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "register": "إنشاء حساب"
+    },
+    "errors": {
+      "required": "هذا الحقل مطلوب",
+      "invalid": "قيمة غير صالحة",
+      "login_first": "يرجى تسجيل الدخول أولاً"
+    }
+  }
+}
