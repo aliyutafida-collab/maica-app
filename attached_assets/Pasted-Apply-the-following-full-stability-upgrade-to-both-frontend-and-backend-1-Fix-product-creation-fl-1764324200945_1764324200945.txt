@@ -1,0 +1,68 @@
+Apply the following full stability upgrade to both frontend and backend:
+
+1. Fix product creation flow:
+   - Ensure products created during onboarding are saved to Supabase with user_id and company_id.
+   - Fix Products disappearing due to missing foreign key or incorrect filter query.
+   - Update GET /products to filter by company_id AND user_id correctly.
+   - Fix product dropdown on Record Sale screen returning “undefined”.
+   - Add missing navigation handler for the big "+" FAB (Add Product).
+
+2. Dashboard header:
+   - Replace user email with company name on all screens.
+   - Fix truncation and spacing issues in all languages.
+
+3. Thousand separator formatting:
+   - Apply 3-digit comma grouping everywhere.
+   - Remove decimals entirely across all financial fields.
+
+4. Fix “Failed to fetch products”:
+   - Ensure API base URL is correct for Render.
+   - Fix CORS header on all backend routes.
+   - Add error handling: if token invalid → logout safely.
+
+5. Disable dark mode ONLY on Login and Register screens.
+
+6. Fix native module crash on Expo Go:
+   - Remove or conditionally load any library NOT supported by Expo Go.
+   - Ensure biometric module uses expo-local-authentication only.
+   - Replace any unsupported native imports.
+
+7. Onboarding upgrades:
+   - Allow unlimited products during initial setup.
+   - Save them immediately to database.
+   - Push user to Dashboard only after successful save.
+
+8. Fix Reports crash and AI Advisor button navigation.
+
+9. Implement missing Arabic translations and apply RTL alignment to:
+   - Dashboard
+   - Products
+   - Add Sale
+   - Add Expense
+   - Reports
+   - Settings
+   - Learning Page
+   - AI Advisor
+   - Onboarding
+
+10. Fix the “Record Sale” product selector blur/overlap issue.
+
+11. Add error-safe wrappers around all API requests.
+
+12. Update biometric login:
+   - If token missing → show message “Please login first”.
+   - If token exists → attempt biometric authentication.
+
+13. Ensure all screens load without network race conditions:
+   - useFocusEffect for data refresh
+   - debounce for search
+   - lazy-load heavy pages
+
+14. Confirm Free vs Premium feature locking works:
+   - PDF generation hidden for Free tier.
+   - AI Advisor for Premium only.
+
+15. After implementing all fixes:
+   - Stage all modified files
+   - Prepare commit summary titled: “Full Stability + Product Fix + Dashboard Upgrade”
+   - WAIT for confirmation before pushing.
