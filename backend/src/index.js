@@ -10,6 +10,8 @@ const subscriptionsRoutes = require('./routes/subscriptions');
 const reportsRoutes = require('./routes/reports');
 const salesRoutes = require('./routes/sales');
 const expensesRoutes = require('./routes/expenses');
+const advisorRoutes = require('./routes/advisor');
+const taxRoutes = require('./routes/tax');
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use('/subscriptions', subscriptionsRoutes);
 app.use('/reports', reportsRoutes);
 app.use('/sales', salesRoutes);
 app.use('/expenses', expensesRoutes);
+app.use('/advisor', advisorRoutes);
+app.use('/tax', taxRoutes);
 
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

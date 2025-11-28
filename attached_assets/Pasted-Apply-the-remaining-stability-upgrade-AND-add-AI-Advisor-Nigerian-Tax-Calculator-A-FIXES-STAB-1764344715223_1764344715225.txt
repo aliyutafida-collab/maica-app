@@ -1,0 +1,59 @@
+Apply the remaining stability upgrade AND add AI Advisor + Nigerian Tax Calculator.
+
+A. FIXES & STABILITY
+1. Fix product creation flow (save with user_id and company_id). Ensure products persist after onboarding and display correctly on Products page.
+2. Replace user email with company name on Dashboard header.
+3. Apply thousand separator formatting across all screens (no decimals).
+4. Fix “Failed to fetch products” API/CORS errors.
+5. Disable dark mode on Login and Register screens.
+6. Remove unsupported native modules causing Expo Go “Invariant Violation”.
+7. Improve onboarding product saving (multiple products + instant sync).
+8. Fix Reports and AI Advisor navigation.
+9. Apply RTL alignment across all screens (Dashboard, Products, Sales, Expenses, Reports, Settings, Learning, AI Advisor, Onboarding).
+10. Fix Record Sale product dropdown overlap.
+11. Add error-safe API wrappers around all fetch calls.
+12. Improve biometric login logic with clear fallback messages.
+13. Fix race conditions with useFocusEffect & debounce.
+14. Confirm Free vs Premium feature restrictions.
+15. Stage all changes but DO NOT push yet.
+
+B. ADD FULL AI ADVISOR FUNCTIONALITY
+16. Create a backend route /advisor/ai-insights using OpenAI API.
+17. AI Advisor must analyze:
+    – Sales
+    – Expenses
+    – Net profit
+    – Cashflow trends
+    – Product performance
+18. Provide advice on:
+    – How to increase sales
+    – Reducing costs
+    – Improving cashflow
+    – Pricing strategies for Nigeria
+19. Add safety disclaimer and avoid legal/financial guarantees.
+20. Add UI input box + predefined quick-question buttons.
+21. Make the AI Advisor work fully in all languages including Arabic (RTL).
+
+C. ADD NIGERIAN TAX CALCULATOR (SEPARATE PAGE)
+22. Add a menu item: “Tax Calculator (Nigeria)” under Reports or Tools.
+23. Tax Calculator should include:
+    – Personal Income Tax (PIT)
+    – Company Income Tax (CIT)
+    – VAT (7.5%)
+24. User inputs revenue, expenses, salaries. System computes estimated tax.
+25. Add logic for:
+    – Small, Medium, Large company CIT rates
+    – PAYE progressive brackets
+    – VAT thresholds
+26. Add “Export Tax Report to PDF” for Premium users only.
+27. Add disclaimer: “This is an estimate. Contact FIRS for official tax computation.”
+
+D. PDF REPORT GENERATION
+28. Implement server-side PDF generation (pdfkit or puppeteer).
+29. Add export buttons for Monthly, Quarterly, Yearly PDF reports.
+30. Include logo, company name, sales, expenses, profit, tax summary.
+31. Store PDFs in Supabase storage and return a download link.
+32. Premium-only access.
+
+E. FINAL STEP
+33. Provide a summary of all changed files and wait for my confirmation before pushing.

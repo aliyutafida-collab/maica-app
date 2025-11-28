@@ -198,6 +198,27 @@ export default function MoreScreen() {
           </View>
           <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
         </Pressable>
+
+        <Pressable
+          onPress={() => navigation.navigate("TaxCalculator")}
+          style={({ pressed }) => [
+            styles.menuItem,
+            {
+              backgroundColor: theme.surface,
+              borderColor: theme.border,
+              opacity: pressed ? 0.8 : 1,
+            },
+            rtlStyle,
+          ]}
+        >
+          <View style={[styles.menuItemLeft, rtlStyle]}>
+            <Feather name="percent" size={24} color={theme.accent} />
+            <ThemedText style={[styles.menuItemText, { color: theme.text }, rtlTextAlign]}>
+              {t("more.taxCalculator") || "Tax Calculator (Nigeria)"}
+            </ThemedText>
+          </View>
+          <Feather name={isRTL ? "chevron-left" : "chevron-right"} size={20} color={theme.textSecondary} />
+        </Pressable>
       </View>
 
       <View style={styles.section}>
@@ -341,8 +362,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   name: {
-    fontSize: 16, fontWeight: '400' as const, lineHeight: 24,
-    fontWeight: "600" as const,
+    fontSize: 16,
+    fontWeight: "600",
+    lineHeight: 24,
     marginBottom: Spacing.xs,
   } as any,
   email: {
@@ -352,9 +374,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   sectionTitle: {
-    fontSize: 12, fontWeight: '500' as const, lineHeight: 16,
-    textTransform: "uppercase",
+    fontSize: 12,
     fontWeight: "600",
+    lineHeight: 16,
+    textTransform: "uppercase",
     marginBottom: Spacing.md,
   },
   menuItem: {

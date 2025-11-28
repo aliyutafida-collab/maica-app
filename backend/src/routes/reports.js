@@ -428,4 +428,107 @@ router.get('/history', verifyToken, async (req, res) => {
   }
 });
 
+router.post('/tax-summary', verifyToken, async (req, res) => {
+  try {
+    const userId = req.userId;
+    const { revenue, expenses, salaries, result, isRTL = false, language = 'en' } = req.body;
+
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('subscription_plan, trial_ends_at')
+      .eq('id', userId)
+      .single();
+
+    const isPremium = profileData?.subscription_plan === 'premium';
+    const isInTrial = profileData?.trial_ends_at && new Date(profileData.trial_ends_at) > new Date();
+
+    if (!isPremium && !isInTrial) {
+      return res.status(403).json({ error: 'Premium subscription required for PDF export' });
+    }
+
+    const { data: companyData } = await supabase
+      .from('companies')
+      .select('name')
+      .eq('user_id', userId)
+      .single();
+
+    const companyName = companyData?.name || 'My Business';
+
+    const PDFDocument = require('pdfkit');
+    const pdfBuffer = await new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ margin: 50, size: 'A4' });
+      const chunks = [];
+      
+      doc.on('data', chunk => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      doc.fontSize(24).fillColor('#0B234A').text('Tax Summary Report', { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(14).fillColor('#333').text(companyName, { align: 'center' });
+      doc.fontSize(10).fillColor('#666').text(new Date().toLocaleDateString('en-NG'), { align: 'center' });
+      doc.moveDown(2);
+
+      doc.fontSize(12).fillColor('#0B234A').text('Financial Summary');
+      doc.moveDown(0.5);
+      doc.fontSize(10).fillColor('#333');
+      doc.text(`Annual Revenue: ₦${Number(revenue || 0).toLocaleString()}`);
+      doc.text(`Annual Expenses: ₦${Number(expenses || 0).toLocaleString()}`);
+      doc.text(`Total Salaries: ₦${Number(salaries || 0).toLocaleString()}`);
+      doc.text(`Taxable Profit: ₦${(result?.summary?.profit || 0).toLocaleString()}`);
+      doc.moveDown(2);
+
+      if (result?.taxes) {
+        doc.fontSize(12).fillColor('#0B234A').text('Tax Breakdown');
+        doc.moveDown(0.5);
+        doc.fontSize(10).fillColor('#333');
+        
+        const cit = result.taxes.companyIncomeTax;
+        doc.text(`Company Income Tax (${cit.category} - ${cit.rate}%): ₦${cit.tax.toLocaleString()}`);
+        
+        const vat = result.taxes.vat;
+        doc.text(`VAT Collectable (${vat.applicable ? '7.5%' : 'N/A'}): ₦${vat.vat.toLocaleString()}`);
+        
+        const edu = result.taxes.educationTax;
+        doc.text(`Education Tax (${edu.rate}%): ₦${edu.amount.toLocaleString()}`);
+        
+        if (result.taxes.nitdaLevy.applicable) {
+          doc.text(`NITDA Levy (${result.taxes.nitdaLevy.rate}%): ₦${result.taxes.nitdaLevy.amount.toLocaleString()}`);
+        }
+        
+        if (result.taxes.paye) {
+          doc.text(`Estimated PAYE: ₦${result.taxes.paye.estimatedPAYE.toLocaleString()}`);
+        }
+        
+        doc.moveDown();
+        doc.fontSize(12).fillColor('#0B234A').text(`Total Estimated Tax: ₦${(result.totalEstimatedTax || 0).toLocaleString()}`);
+      }
+
+      doc.moveDown(2);
+      doc.fontSize(8).fillColor('#999');
+      doc.text('DISCLAIMER: This is an estimate for informational purposes only. Tax calculations may vary based on specific circumstances, exemptions, and current FIRS regulations. Please consult a qualified tax professional or contact FIRS for official tax computation.', { align: 'center' });
+
+      doc.end();
+    });
+
+    const pdfUrl = await uploadToSupabase(pdfBuffer, userId, 'tax-summary');
+
+    await saveReportHistory(userId, 'tax-summary', pdfUrl, {
+      revenue,
+      expenses,
+      salaries,
+      totalTax: result?.totalEstimatedTax
+    });
+
+    res.json({ 
+      ok: true, 
+      url: pdfUrl,
+      reportType: 'tax-summary'
+    });
+  } catch (error) {
+    console.error('Tax summary PDF error:', error);
+    res.status(500).json({ error: 'Failed to generate tax summary PDF' });
+  }
+});
+
 module.exports = router;

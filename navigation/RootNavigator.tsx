@@ -11,6 +11,7 @@ import AddExpenseScreen from "@/screens/AddExpenseScreen";
 import AIAdvisorScreen from "@/screens/AIAdvisorScreen";
 import SubscriptionScreen from "@/screens/SubscriptionScreen";
 import FinancialLearningScreen from "@/screens/FinancialLearningScreen";
+import TaxCalculatorScreen from "@/screens/TaxCalculatorScreen";
 import { useAuth } from "@/contexts/AuthContext";
 
 export type RootStackParamList = {
@@ -24,6 +25,7 @@ export type RootStackParamList = {
   AIAdvisor: undefined;
   Subscription: undefined;
   FinancialLearning: undefined;
+  TaxCalculator: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -59,6 +61,7 @@ export default function RootNavigator() {
                 <Stack.Screen name="AIAdvisor" component={AIAdvisorScreen} />
                 <Stack.Screen name="Subscription" component={SubscriptionScreen} />
                 <Stack.Screen name="FinancialLearning" component={FinancialLearningScreen} />
+                <Stack.Screen name="TaxCalculator" component={TaxCalculatorScreen} />
               </Stack.Group>
             </>
           )}
