@@ -93,13 +93,25 @@ Preferred communication style: Simple, everyday language.
 
 **Subscription Tiers**
 1. **Trial**: 60-day free trial for all new users
-2. **Standard** (₦2,500/month): Full inventory, sales, expenses, reports, multi-language
-3. **Premium** (₦5,000/month): Standard features + AI Advisor + tax optimization + advanced exports
+2. **Basic** (₦2,500/month or ₦30,000/year): Full inventory, sales, expenses, reports, multi-language
+3. **Premium** (₦5,000/month or ₦50,000/year): Basic features + AI Advisor + tax optimization + advanced exports
+
+**Payment Integration**
+- **Providers**: Paystack and Flutterwave (dual provider support)
+- **Plan Configuration**: `backend/src/config/subscriptions.js` with plan codes for both providers
+- **API Endpoints**:
+  - `POST /subscriptions/create` - Initialize payment with either provider
+  - `GET /subscriptions/verify` - Verify payment and activate subscription
+  - `GET /subscriptions/status` - Get current subscription status
+  - `POST /subscriptions/cancel` - Cancel active subscription
+  - `POST /subscriptions/webhook/paystack` - Paystack webhook handler
+  - `POST /subscriptions/webhook/flutterwave` - Flutterwave webhook handler
+- **Currency**: Nigerian Naira (₦) with comma thousand separators, no decimals
 
 **Feature Gating**
 - `hasFeature()` method checks subscription level before enabling premium features
-- Trial period calculated from initial signup date stored in AsyncStorage
-- Subscription data stored per-user: `@maica_subscription_{userId}`
+- Trial period calculated from initial signup date stored in database
+- Subscription status synced from backend after payment verification
 
 ### Internationalization (i18n)
 
